@@ -1,0 +1,11 @@
+# Results
+*.prg
+
+# swap files etc
+*.swp
+*~
+
+# temp files
+labels.txt
+reindexed.kla
+sprites-horizontal.bin
