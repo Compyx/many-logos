@@ -14,7 +14,7 @@
         ZP = $02
 
 
-        RASTER = $0f
+        RASTER = $0c
 
 
 .if USE_SYSLINE=1
@@ -67,7 +67,7 @@ start
         sta $d020
         stx $d021
 
-        lda #$48
+        lda #$21
         sta delay + 3
 
         jsr sprites_setup
@@ -120,12 +120,17 @@ irq0a
         sta $d021
         nop
 
-        ldx #$18
--       dex
-        bne -
-        nop
-        bit $ea
         jsr delay
+
+        lda #$14
+        jsr sprites_set_ypos
+        lda #0
+        ldx #0
+        jsr sprites_set_xpos
+        lda #$0f
+        ldx #$01
+        ldy #$0c
+        jsr sprites_set_colors
 
         lda #$ff
         sta $d017
@@ -142,7 +147,6 @@ irq0a
         dec $d020
         jsr SID_PLAY
         dec $d020
-        jsr setup_logo_0
         lda #0
         sta $d020
 ;.fi
@@ -189,40 +193,10 @@ irq_nope rti
 
 
 sprites_setup
-        lda #$00
-        sta $d000
-        lda #$18
-        sta $d002
-        lda #$30
-        sta $d004
-        lda #$48
-        sta $d006
-        lda #$60
-        sta $d008
-        lda #$78
-        sta $d00a
-        lda #$90
-        sta $d00c
-        lda #$a8
-        sta $d00e
-        lda #0
-        sta $d010
-
-sprypos0
-        lda #$14
-        sta $d001
-        sta $d003
-        sta $d005
-        sta $d007
-        sta $d009
-        sta $d00b
-        sta $d00d
-        sta $d00f
 
         lda #$ff
         sta $d015
         sta $d01c
-        sta $d017
 
         ldx #(SPRITES_LOAD / 64) & $3fff
         stx $0bf8
@@ -257,12 +231,9 @@ sprypos0
         stx $0ffe
         inx
         stx $0fff
+        rts
 
-
-        lda #$0f
-        ldx #$01
-        ldy #$0c
-sprites_set_colors
+sprites_set_colors .proc
         sta $d025
         stx $d026
         sty $d027
@@ -273,8 +244,8 @@ sprites_set_colors
         sty $d02c
         sty $d02d
         sty $d02e
-
         rts
+        .pend
 
 .align 256
 open_border_1
@@ -306,18 +277,9 @@ open_border_1
 
         rts
 
+sinus
 
-setup_logo_0
-        lda #$14
-        sta $d001
-        sta $d003
-        sta $d005
-        sta $d007
-        sta $d009
-        sta $d00b
-        sta $d00d
-        sta $d00f
-        rts
+
 
         * = SID_LOAD
 .binary  format("%s", SID_PATH), $7e
@@ -325,8 +287,8 @@ setup_logo_0
 
 .align 256
 colors
-;        .byte 6, 0, 4, 0, 14, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 14, 0, 4, 0, 6, 0
-;        .byte 9, 0, 8, 0, 10, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 10, 0, 8, 0, 9, 0
+    ;.byte 6, 0, 4, 0, 14, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 14, 0, 4, 0, 6, 0
+    ;    .byte 9, 0, 8, 0, 10, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 10, 0, 8, 0, 9, 0
 
         .fill 48, 11
 
@@ -359,9 +321,31 @@ delay
         bit $ea
         rts
 
+; Input: A
+sprites_set_ypos .proc
+        sta $d001
+        sta $d003
+        sta $d005
+        sta $d007
+        sta $d009
+        sta $d00b
+        sta $d00d
+        sta $d00f
+        rts
+.pend
 
 
-
+; Input A. X
+sprites_set_xpos .proc
+        sta $d000
+.for si = 1, si < 8, si += 1
+        clc
+        adc #$18
+        sta $d000 + 2 * si
+.next
+        stx $d010
+        rts
+.pend
 
 ; FOCUS logo
         * = SPRITES_LOAD        ; $3c00-$3fff
