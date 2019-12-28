@@ -13,7 +13,6 @@
         SPRITES_LOAD = $3c00
         ZP = $02
 
-
         RASTER = $0c
 
 
@@ -124,8 +123,8 @@ irq0a
 
         lda #$14
         jsr sprites_set_ypos
-        lda #0
-        ldx #0
+logo_0_xpos lda #0
+logo_0_msb  ldx #0
         jsr sprites_set_xpos
         lda #$0f
         ldx #$01
@@ -173,7 +172,9 @@ irq1
         sta $d018
         lda #$0b
         sta $d011
-
+        dec $d020
+        jsr do_sinus_logo_0
+        inc $d020
 
         ldy #RASTER
         lda #<irq0
@@ -278,6 +279,54 @@ open_border_1
         rts
 
 sinus
+        .byte 128 + 127.5 * sin(range(256) * rad(360.0/256))
+
+
+do_sinus_logo_0
+        ldx #0
+        lda sinus,x
+        ; logo is 24*8 pixels
+        ; so ...
+
+        jsr poop
+        sta logo_0_xpos +1
+        stx logo_0_msb + 1
+        inc do_sinus_logo_0 + 1
+        rts
+
+; $00 = $00,$18,$30,$48,$60,$78,$90,$a8
+; $20 = $80
+; $38 = $c0
+; $50 = $e0
+; $68 = $f0
+; return: Y = $d010
+
+
+poop .proc
+        ldx #0
+        cmp #$58
+        bcc +
+        ldx #$80
+        cmp #$70
+        bcc +
+        ldx #$c0
+        cmp #$88
+        bcc +
+        ldx #$e0
+        cmp #$a0
+        bcc +
+        ldx #$f0
+        cmp #$b8
+        bcc +
+        ldx #$f8
+        cmp #$d0
+        bcc +
+        ldx #$fc
+        cmp #$e8
+        bcc +
+        ldx #$fe
++       rts
+.pend
 
 
 
