@@ -67,7 +67,7 @@ start
         sta $d020
         stx $d021
 
-        lda #$63
+        lda #$48
         sta delay + 3
 
         jsr sprites_setup
@@ -120,11 +120,16 @@ irq0a
         sta $d021
         nop
 
-        ldx #$20
+        ldx #$18
 -       dex
         bne -
-
+        nop
+        bit $ea
         jsr delay
+
+        lda #$ff
+        sta $d017
+
         jsr open_border_1
 
         jsr update_delay
@@ -136,7 +141,10 @@ irq0a
 ;.if SID_ENABLE
         dec $d020
         jsr SID_PLAY
-        inc $d020
+        dec $d020
+        jsr setup_logo_0
+        lda #0
+        sta $d020
 ;.fi
         lda #<irq1
         ldx #>irq1
@@ -152,10 +160,13 @@ irq1
 
         lda #$03
         sta $d011
+        lda #0
+        sta $d017
         ldx #$30
 -       dex
         bne -
-
+        lda #$27
+        sta $d018
         lda #$0b
         sta $d011
 
@@ -197,6 +208,7 @@ sprites_setup
         lda #0
         sta $d010
 
+sprypos0
         lda #$14
         sta $d001
         sta $d003
@@ -210,23 +222,42 @@ sprites_setup
         lda #$ff
         sta $d015
         sta $d01c
+        sta $d017
 
         ldx #(SPRITES_LOAD / 64) & $3fff
-        stx $07f8
+        stx $0bf8
         inx
-        stx $07f9
+        stx $0bf9
         inx
-        stx $07fa
+        stx $0bfa
         inx
-        stx $07fb
+        stx $0bfb
         inx
-        stx $07fc
+        stx $0bfc
         inx
-        stx $07fd
+        stx $0bfd
         inx
-        stx $07fe
+        stx $0bfe
         inx
-        stx $07ff
+        stx $0bff
+        ; refactor!
+        inx
+        stx $0ff8
+        inx
+        stx $0ff9
+        inx
+        stx $0ffa
+        inx
+        stx $0ffb
+        inx
+        stx $0ffc
+        inx
+        stx $0ffd
+        inx
+        stx $0ffe
+        inx
+        stx $0fff
+
 
         lda #$0f
         ldx #$01
@@ -245,32 +276,48 @@ sprites_set_colors
 
         rts
 
+.align 256
 open_border_1
         ldy #8
-        ldx #24
--       lda colors,x
-        dec $d016
-        sty $d016
-        sta $d021
+        ldx #42
+-       lda colors,x    ; 4
+        dec $d016       ; 6
+        sty $d016       ; 4
+        sta $d021       ; 4
+        nop             ; 2 * 10
         nop
         nop
         nop
         nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        bit $ea
-        dex
-        bpl -
+;        nop
+;        nop
+;        nop
+;        nop
+;        nop
+        lda $d018
+        eor #$10
+        sta $d018
+
+        bit $ea         ; 3
+        dex             ;2
+        bpl -           ; 3 when brach, 2 when not
+                        ;+ ----
+                        ; 18 + 20 + 5 + 2 = 
 
         rts
 
 
-
-
+setup_logo_0
+        lda #$14
+        sta $d001
+        sta $d003
+        sta $d005
+        sta $d007
+        sta $d009
+        sta $d00b
+        sta $d00d
+        sta $d00f
+        rts
 
         * = SID_LOAD
 .binary  format("%s", SID_PATH), $7e
@@ -317,4 +364,4 @@ delay
 
 ; FOCUS logo
         * = SPRITES_LOAD        ; $3c00-$3fff
-.binary "sprites-horizontal.bin"
+.binary "sprites-stretched.bin"

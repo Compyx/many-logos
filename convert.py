@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import pprint
 
 
 class SpritesHandler(object):
@@ -147,11 +148,36 @@ class SpritesHorizontal(SpritesHandler):
             self._sprites[spr_x * 64 + 0x200:(spr_x + 1) * 64 + 0x200] = self.get_sprite(
                 spr_x * 3, 21)
 
+    def make_stretched(self):
+        """Interleave 2 sprites high for $d017 stretching + $d018 toggling"""
+
+        data = bytearray(16 * 64)
+
+
+        rows = [(r * 3, (int(r / 2 ) * 3 + (r % 2) * 0x200)) for r in range(42)]
+        pprint.pprint(rows)
+
+        for s in range(8):
+            print("sprite {}:".format(s))
+            for row, elem in enumerate(rows):
+                src, dest = elem
+                if (src % 0x40 == 0x3f):
+                    src += 1
+
+                src = src + s * 0x40
+                dest = dest +s * 0x40
+
+                print("copying row {}: {:04x}-{:04x} to {:04x}-{:04x}".format(
+                    row, src, src + 2, dest, dest + 2))
+                data[dest:dest + 3] = self._sprites[src:src + 3]
+
+        self._stretched = data
 
     def write_sprites(self):
         with open("sprites-horizontal.bin", "wb") as outfile:
             outfile.write(self._sprites)
-
+        with open("sprites-stretched.bin", "wb") as outfile:
+            outfile.write(self._stretched)
 
 
 class SpritesVertical(SpritesHandler):
@@ -232,6 +258,10 @@ class SpritesVertical(SpritesHandler):
 
 
 
+
+
+
+
 if __name__ == '__main__':
 #    koala = SpritesHandler('focus3.kla')
 #    koala.reindex_colors()
@@ -244,6 +274,7 @@ if __name__ == '__main__':
     print("OK")
 
     koala.convert()
+    koala.make_stretched()
     koala.write_sprites()
 
 
