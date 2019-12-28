@@ -13,7 +13,7 @@ SOURCES = main.s
 
 all: $(PROGRAM)
 
-$(PROGRAM): $(SOURCES) #find-gaps.awk
+$(PROGRAM): $(SOURCES) convert.py sprites-stretched.bin
 	#$(ASM) $(AFLAGS) $< -o $@ | awk -f find-gaps.awk
 	$(ASM) $(AFLAGS) -D USE_SYSLINE=1 $< -o $@
 
