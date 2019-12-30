@@ -13,8 +13,9 @@
         SPRITES_LOAD = $3c00
         ZP = $02
 
-        RASTER = $0c
+        RASTER = $0e
 
+        NUM_LOGOS = 4
 
 .if USE_SYSLINE=1
 ; BASIC SYS line
@@ -66,7 +67,7 @@ start
         sta $d020
         stx $d021
 
-        lda #$21
+        lda #$1d
         sta delay + 3
 
         jsr sprites_setup
@@ -118,13 +119,17 @@ irq0a
         sta $d021
         sta $d021
         nop
-
+        
+        ; lda #0        ; 2
+        ; beq $xxxx     ; 3
+        ; ($1b21):
+        ; 
         jsr delay
 
         lda #$14
         jsr sprites_set_ypos
-logo_0_xpos lda #0
-logo_0_msb  ldx #0
+        nop
+        ldx #0  ; logo index
         jsr sprites_set_xpos
         lda #$0f
         ldx #$01
@@ -133,6 +138,23 @@ logo_0_msb  ldx #0
 
         lda #$ff
         sta $d017
+
+        jsr open_border_1
+
+
+
+        ldx #$10
+-       dex
+        bne -
+        dec $d020
+        lda #78
+        jsr sprites_set_ypos
+        lda #$0a
+        ldx #$07
+        ldy #$02
+        jsr sprites_set_colors
+
+        jsr delay
 
         jsr open_border_1
 
@@ -278,19 +300,18 @@ open_border_1
 
         rts
 
+
 sinus
         .byte 128 + 127.5 * sin(range(256) * rad(360.0/256))
 
 
 do_sinus_logo_0
+        ldy #0
+        lda sinus,y
         ldx #0
-        lda sinus,x
-        ; logo is 24*8 pixels
-        ; so ...
-
-        jsr poop
-        sta logo_0_xpos +1
-        stx logo_0_msb + 1
+        jsr calc_sprites_xpos
+.if 0
+.fi
         inc do_sinus_logo_0 + 1
         rts
 
@@ -302,32 +323,13 @@ do_sinus_logo_0
 ; return: Y = $d010
 
 
-poop .proc
-        ldx #0
-        cmp #$58
-        bcc +
-        ldx #$80
-        cmp #$70
-        bcc +
-        ldx #$c0
-        cmp #$88
-        bcc +
-        ldx #$e0
-        cmp #$a0
-        bcc +
-        ldx #$f0
-        cmp #$b8
-        bcc +
-        ldx #$f8
-        cmp #$d0
-        bcc +
-        ldx #$fc
-        cmp #$e8
-        bcc +
-        ldx #$fe
-+       rts
-.pend
+;
+spr_xpos_table  .fill NUM_LOGOS * $09, 0
 
+
+
+spr_xpos_add    .byte $00, $18, $30, $48, $60, $78, $90,$a8
+spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80
 
 
         * = SID_LOAD
@@ -384,18 +386,47 @@ sprites_set_ypos .proc
 .pend
 
 
-; Input A. X
+; Input X
 sprites_set_xpos .proc
-        sta $d000
-.for si = 1, si < 8, si += 1
-        clc
-        adc #$18
-        sta $d000 + 2 * si
+.for si = 0, si < 8, si += 1
+        lda spr_xpos_table + si,x
+        sta $d000 + si * 2
 .next
-        stx $d010
+        lda spr_xpos_table + 8,x
+        sta $d010
         rts
-.pend
+        .pend
 
 ; FOCUS logo
         * = SPRITES_LOAD        ; $3c00-$3fff
 .binary "sprites-stretched.bin"
+
+
+; X = sprite xpos + msb table index (ie $00, $11, $22, $33)
+calc_sprites_xpos .proc
+        xpos = ZP
+        xmsb = ZP + 1
+
+        sta xpos
+        ldy #0
+        sty xmsb
+-
+        lda xpos
+        clc
+        adc spr_xpos_add,y
+        sta spr_xpos_table,x
+        bcc +
+        lda spr_xpos_msbbit,y
+        ora xmsb
+        sta xmsb
++
+        inx
+        iny
+        cpy #8
+        bne -
+        lda xmsb
+        sta spr_xpos_table,x
+        rts
+.pend
+
+
