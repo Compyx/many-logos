@@ -67,7 +67,7 @@ start
         sta $d020
         stx $d021
 
-        lda #$1d
+        lda #$59
         sta delay + 3
 
         jsr sprites_setup
@@ -115,12 +115,13 @@ irq0a
         cmp $d012
         beq +
 +
-        lda #0
+        lda #$01
+        sta $d020
         sta $d021
-        sta $d021
-        nop
+        lda #$24
+        sta $d018
         
-        ; lda #0        ; 2
+        ; lda `#0        ; 2
         ; beq $xxxx     ; 3
         ; ($1b21):
         ; 
@@ -149,6 +150,8 @@ irq0a
         dec $d020
         lda #78
         jsr sprites_set_ypos
+        ldx #9
+        jsr sprites_set_xpos
         lda #$0a
         ldx #$07
         ldy #$02
@@ -190,12 +193,13 @@ irq1
         ldx #$30
 -       dex
         bne -
-        lda #$27
+        lda #$26
         sta $d018
         lda #$0b
         sta $d011
         dec $d020
         jsr do_sinus_logo_0
+        jsr do_sinus_logo_1
         inc $d020
 
         ldy #RASTER
@@ -310,10 +314,20 @@ do_sinus_logo_0
         lda sinus,y
         ldx #0
         jsr calc_sprites_xpos
-.if 0
-.fi
         inc do_sinus_logo_0 + 1
         rts
+
+do_sinus_logo_1
+        ldy #$40
+        lda sinus,y
+        ldx #9
+        jsr calc_sprites_xpos
+        inc do_sinus_logo_1 + 1
+        rts
+
+
+
+
 
 ; $00 = $00,$18,$30,$48,$60,$78,$90,$a8
 ; $20 = $80
@@ -388,9 +402,10 @@ sprites_set_ypos .proc
 
 ; Input X
 sprites_set_xpos .proc
+        ldy #0
 .for si = 0, si < 8, si += 1
         lda spr_xpos_table + si,x
-        sta $d000 + si * 2
+        sta $d000 + si * 2,y
 .next
         lda spr_xpos_table + 8,x
         sta $d010
