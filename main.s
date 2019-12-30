@@ -115,17 +115,39 @@ irq0a
         cmp $d012
         beq +
 +
-        lda #$01
-        sta $d020
-        sta $d021
+;        lda #$0b
+;        sta $d020
+;        sta $d021
         lda #$24
         sta $d018
-        
+
+        ; --- delay ---
         ; lda `#0        ; 2
         ; beq $xxxx     ; 3
         ; ($1b21):
         ; 
-        jsr delay
+
+        ; jsr           ; 6
+        ; lda #0        ; 2
+        ; beq *+xx      ; 3
+        ; $59 in the branch:
+        ; 20 * CPX #$e0/24      ; 20 * 2 = 40
+        ; nop           ; 2
+        ; rts           ; 6
+        ;               ; ----
+        ;               ; 59
+
+        ldx #$0b
+-       dex
+        bne -
+        nop
+        nop
+        
+
+;        jsr delay
+        lda #$0b
+        sta $d020
+        sta $d021
 
         lda #$14
         jsr sprites_set_ypos
@@ -142,21 +164,28 @@ irq0a
 
         jsr open_border_1
 
+        lda #0          ; 2
+        sta $d020       ; 4
+        sta $d021       ; 4
 
 
-        ldx #$10
+        ldx #$0e
 -       dex
         bne -
-        dec $d020
-        lda #78
+        lda #$02
+        stx $d020
+        sta $d021
+        lda #$46
         jsr sprites_set_ypos
         ldx #9
         jsr sprites_set_xpos
-        lda #$0a
+        lda #$0f
         ldx #$07
-        ldy #$02
+        ldy #$0a
         jsr sprites_set_colors
 
+        lda #$2c + 6
+        sta delay + 3
         jsr delay
 
         jsr open_border_1
@@ -281,7 +310,9 @@ open_border_1
 -       lda colors,x    ; 4
         dec $d016       ; 6
         sty $d016       ; 4
-        sta $d021       ; 4
+        ;sta $d021       ; 4
+        nop
+        nop
         nop             ; 2 * 10
         nop
         nop
