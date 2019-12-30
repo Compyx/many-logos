@@ -141,14 +141,13 @@ irq0a
 -       dex
         bne -
         nop
-        nop
         
 
 ;        jsr delay
         lda #$0b
         sta $d020
         sta $d021
-
+        nop
         lda #$14
         jsr sprites_set_ypos
         nop
@@ -163,22 +162,28 @@ irq0a
         sta $d017
 
         jsr open_border_1
-
-        lda #0          ; 2
-        sta $d020       ; 4
-        sta $d021       ; 4
-
-
-        ldx #$0e
+        ldx #$05
 -       dex
         bne -
-        lda #$02
-        stx $d020
-        sta $d021
+        ;lda #0          ; 2
+        stx $d021       ; 4
+        stx $d020       ; 4
+
+
+         nop
         lda #$46
         jsr sprites_set_ypos
         ldx #9
         jsr sprites_set_xpos
+        ldx #$08
+-       dex
+        bne -
+        lda #$02
+        sta $d020
+        sta $d021
+        nop
+        bit $ea
+ 
         lda #$0f
         ldx #$07
         ldy #$0a
@@ -189,7 +194,11 @@ irq0a
         jsr delay
 
         jsr open_border_1
-
+        ldx #$03
+-       dex
+        bne -
+        stx $d020
+        stx $d021
         jsr update_delay
 
 ;        lda #0
