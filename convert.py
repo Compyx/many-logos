@@ -169,15 +169,16 @@ class SpritesHorizontal(SpritesHandler):
         ]
 
 
-        for (s, d) in rows:
-            print("{:04x} -> {:04x}".format(s, d +0x3c00))
+#        for (s, d) in rows:
+#            print("{:04x} -> {:04x}".format(s, d +0x3c00))
 
         for s in range(8):
-            print("sprite {}:".format(s))
+            #print("sprite {}:".format(s))
             for row, elem in enumerate(rows):
                 src, dest = elem
 
-                data[dest + s * 0x40:dest + s * 0x40 + 3] = self._sprites[src + s * 0x40:src + s * 0x40 + 3]
+                data[dest + s * 0x40:dest + s * 0x40 + 3] = \
+                        self._sprites[src + s * 0x40:src + s * 0x40 + 3]
 
 
 
