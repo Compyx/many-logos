@@ -5,12 +5,23 @@
 ; Code & gfx:   Compyx/Focus
 ;
 ;
-        SID_LOAD = $1000
-        SID_PATH = "Old_Level_2.sid"
-        SID_INIT = SID_LOAD + 0
-        SID_PLAY = SID_LOAD + 3
+;        SID_LOAD = $1000
+;        SID_PATH = "Old_Level_2.sid"
+;        SID_INIT = SID_LOAD + 0
+;        SID_PLAY = SID_LOAD + 3
+
+        ; use zp $20-$3x
+
+        SID_LOAD = $0ffc
+        SID_PATH = "Pling_Plong_2.sid"
+        SID_INIT = SID_LOAD
+        SID_PLAY = SID_LOAD + 4
 
         SPRITES_LOAD = $3c00
+        SCROLL_SPRITES = $3a00
+
+        POINTERS0 = $33f8
+        POINTERS1 = $37f8
         ZP = $02
 
         RASTER = $0e
@@ -31,6 +42,8 @@ start
         sei
         ldx #$ff
         txs
+
+        jsr swap_sid
  ;       stx $d015
   ;      stx $d01d
         lda #$7f
@@ -85,6 +98,7 @@ start
         sei
         lda #$37
         sta $01
+        jsr swap_sid
         jmp $fce2
 irq0
         pha
@@ -118,8 +132,10 @@ irq0a
 ;        lda #$0b
 ;        sta $d020
 ;        sta $d021
-        lda #$24
+        lda #$c0
         sta $d018
+        lda #$00
+        sta $d01d
 
         ; --- delay ---
         ; lda `#0        ; 2
@@ -137,9 +153,10 @@ irq0a
         ;               ; ----
         ;               ; 59
 
-        ldx #$0b
+        ldx #$09
 -       dex
         bne -
+        nop
         nop
         
 
@@ -171,7 +188,7 @@ irq0a
 
 
          nop
-        lda #$46
+logo1_ypos        lda #$46
         jsr sprites_set_ypos
         ldx #9
         jsr sprites_set_xpos
@@ -199,6 +216,36 @@ irq0a
         bne -
         stx $d020
         stx $d021
+
+        lda #$00
+        sta $d017
+        sta $d01c
+        lda #$ff
+        sta $d01d
+
+        lda logo1_ypos + 1
+        clc
+        adc #$30
+        jsr sprites_set_ypos
+        lda #$d5
+        sta $d018
+        ;ldx #(SCROLL_SPRITES /64)
+        ldx #$1000/64
+.for i = 0, i < 7, i += 1
+        stx POINTERS1 + i
+        inx
+.next
+        stx POINTERS1 + 7
+scroll_color
+        lda #1
+.for c = 0, c < 8, c += 1
+        sta $d027 + c
+.next
+        jsr set_scroll_xpos
+        lda #6
+        sta $d020
+        sta $d021
+
         jsr update_delay
 
 ;        lda #0
@@ -236,6 +283,7 @@ irq1
         lda #$0b
         sta $d011
         dec $d020
+        jsr sprites_setup
         jsr do_sinus_logo_0
         jsr do_sinus_logo_1
         inc $d020
@@ -263,39 +311,20 @@ sprites_setup
         sta $d015
         sta $d01c
 
-        ldx #(SPRITES_LOAD / 64) & $3fff
-        stx $0bf8
+        ldx #(SPRITES_LOAD / 64)
+.for i = 0, i < 7, i +=1
+        stx POINTERS0 + i
         inx
-        stx $0bf9
-        inx
-        stx $0bfa
-        inx
-        stx $0bfb
-        inx
-        stx $0bfc
-        inx
-        stx $0bfd
-        inx
-        stx $0bfe
-        inx
-        stx $0bff
+.next
+        stx POINTERS0 + 7
         ; refactor!
         inx
-        stx $0ff8
+
+.for i = 0, i < 7, i += 1
+        stx POINTERS1 + i
         inx
-        stx $0ff9
-        inx
-        stx $0ffa
-        inx
-        stx $0ffb
-        inx
-        stx $0ffc
-        inx
-        stx $0ffd
-        inx
-        stx $0ffe
-        inx
-        stx $0fff
+.next
+        stx POINTERS1 + 7
         rts
 
 sprites_set_colors .proc
@@ -311,6 +340,52 @@ sprites_set_colors .proc
         sty $d02e
         rts
         .pend
+
+set_scroll_xpos .proc
+        lda #$00
+        sta $d000
+        lda #$30
+        sta $d002
+        lda #$60
+        sta $d004
+        lda #$90
+        sta $d006
+        lda #$b0
+        sta $d008
+        lda #$d0
+        sta $d00a
+        lda #$00
+        sta $d00c
+        lda #$30
+        sta $d00e
+
+        lda #$c0
+        sta $d010
+        rts
+.pend
+
+do_sinus_logo_0
+        lda #0
+        and #$7f
+        tay
+
+        lda sinus,y
+        ldx #0
+        jsr calc_sprites_xpos
+        inc do_sinus_logo_0 + 1
+        rts
+
+do_sinus_logo_1
+        lda #$40
+        and #$7f
+        tay
+        lda sinus,y
+        ldx #9
+        jsr calc_sprites_xpos
+        inc do_sinus_logo_1 + 1
+        rts
+
+
 
 .align 256
 open_border_1
@@ -346,24 +421,8 @@ open_border_1
 
 
 sinus
-        .byte 128 + 127.5 * sin(range(256) * rad(360.0/256))
+        .byte 128 + 127.5 * sin(range(128) * rad(360.0/128))
 
-
-do_sinus_logo_0
-        ldy #0
-        lda sinus,y
-        ldx #0
-        jsr calc_sprites_xpos
-        inc do_sinus_logo_0 + 1
-        rts
-
-do_sinus_logo_1
-        ldy #$40
-        lda sinus,y
-        ldx #9
-        jsr calc_sprites_xpos
-        inc do_sinus_logo_1 + 1
-        rts
 
 
 
@@ -385,9 +444,6 @@ spr_xpos_table  .fill NUM_LOGOS * $09, 0
 spr_xpos_add    .byte $00, $18, $30, $48, $60, $78, $90,$a8
 spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80
 
-
-        * = SID_LOAD
-.binary  format("%s", SID_PATH), $7e
 
 
 .align 256
@@ -452,6 +508,43 @@ sprites_set_xpos .proc
         rts
         .pend
 
+
+; SID at temp place
+;               * = SID_LOAD
+
+        * = $3800
+        SID_TEMP = *
+
+.binary  format("%s", SID_PATH), $7e
+
+       SID_TEMP_END = *
+
+swap_sid .proc
+        ldx #0
+-
+        ldy SID_TEMP,x
+        lda SID_LOAD,x
+        sta SID_TEMP,x
+        tya
+        sta SID_LOAD,x
+        inx
+        bne -
+- 
+        ldy SID_TEMP + 256,x
+        lda SID_LOAD + 256,x
+        sta SID_TEMP + 256,x
+        tya
+        sta SID_LOAD + 256,x
+
+        ; don't copy too much, otherwise this routine moves itself, leading to
+        ; some interesting bugs.
+        inx
+        cpx #(SID_TEMP_END - SID_TEMP) & $0ff
+        bne -
+        rts
+.pend
+
+
 ; FOCUS logo
         * = SPRITES_LOAD        ; $3c00-$3fff
 .binary "sprites-stretched.bin"
@@ -483,5 +576,17 @@ calc_sprites_xpos .proc
         sta spr_xpos_table,x
         rts
 .pend
+
+
+.align 256
+
+scroller_clear
+        ldx #0
+        txa
+-       sta SCROLL_SPRITES,x
+        sta SCROLL_SPRITES + 1,x
+        inx
+        bne -
+        rts
 
 
