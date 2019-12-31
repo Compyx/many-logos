@@ -24,7 +24,7 @@
         POINTERS1 = $37f8
         ZP = $02
 
-        RASTER = $0e
+        RASTER = $0d
 
         NUM_LOGOS = 4
 
@@ -158,9 +158,22 @@ irq0a
         bne -
         nop
         nop
-        
 
-;        jsr delay
+        ; 1* JSR        = 6
+        ; 1 * lda #$00  = 2
+        ; 21 * CPX #$E0 = 42
+        ; 1 * CPX #$24  = 2
+        ; 1 * NOP       = 2
+        ; 1 * RTS       = 6
+        ; -------------------+
+        ;               = 62
+        ldx #$0c        ; 2
+                        ; 2 + 3 for each loop except the last, that's -1
+-       dex
+        bne -
+bit $ea
+
+       ; jsr delay       ; $56
         lda #$0b
         sta $d020
         sta $d021
@@ -206,7 +219,7 @@ logo1_ypos        lda #$46
         ldy #$0a
         jsr sprites_set_colors
 
-        lda #$2c + 6
+        lda #$33
         sta delay + 3
         jsr delay
 
