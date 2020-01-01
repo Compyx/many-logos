@@ -277,6 +277,24 @@ scroll_color
         sta $d020
         sta $d021
 
+        ;jsr delay
+
+        ; JSR            6
+        ; lda #xx        2
+        ; beq +          3
+        ; cpx #$E0 *20  40
+        ; cpx #$24       2
+        ; nop            2
+        ; rts            6
+        ; ----------------- +
+        ;               61
+
+        ldx #12
+-       dex
+        bne -
+
+        jsr open_border_2
+
         jsr update_delay
 
 ;        lda #0
@@ -450,6 +468,41 @@ open_border_1
 
         rts
 
+open_border_2
+        ldy #8
+        ldx #23
+-       lda colors,x    ; 4
+        dec $d016       ; 6
+        sty $d016       ; 4
+        sta $d021       ; 4
+        
+        nop             ; 2 * 10
+        nop
+        nop
+        nop
+        nop
+;        nop
+;        nop
+;        nop
+;        nop
+;        nop
+        ;lda $d018
+        ;eor #$10
+        ;sta $d018
+nop
+nop
+nop
+nop
+nop
+
+        bit $ea         ; 3
+        dex             ;2
+        bpl -           ; 3 when brach, 2 when not
+                        ;+ ----
+                        ; 18 + 20 + 5 + 2 = 
+
+        rts
+
 
 sinus
         .byte 128 + 127.5 * sin(range(128) * rad(360.0/128))
@@ -479,10 +532,9 @@ spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80
 
 .align 256
 colors
-    ;.byte 6, 0, 4, 0, 14, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 14, 0, 4, 0, 6, 0
-    ;    .byte 9, 0, 8, 0, 10, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 10, 0, 8, 0, 9, 0
+    .byte 6, 0, 4, 0, 14, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 14, 0, 4, 0, 6, 0
+        .byte 9, 0, 8, 0, 10, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 10, 0, 8, 0, 9, 0
 
-        .fill 48, 11
 
 update_delay
         lda #7
