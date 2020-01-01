@@ -219,9 +219,27 @@ logo1_ypos        lda #$46
         ldy #$0a
         jsr sprites_set_colors
 
-        lda #$33
-        sta delay + 3
-        jsr delay
+;        lda #$33        ; 2
+;        sta delay + 3   ; 4
+;        jsr delay       ; -
+
+        ; JSr = 6               ;  6
+        ; lda #0 = 2            ;  2
+        ; beq * + ??            ;  3
+        ; CPX #$E0 = (32+5) * 2 ; 74
+        ; CPX #$24              ;  2
+        ; NOP                   ;  2
+        ; RTS                   ;  6
+        ;
+        ; total                 ; 95
+
+        ldx #20
+-       dex     ; 2
+        bne -   ; 3 /2
+        nop
+;nop
+;        bit $ea
+
 
         jsr open_border_1
         ldx #$03
@@ -601,5 +619,4 @@ scroller_clear
         inx
         bne -
         rts
-
 
