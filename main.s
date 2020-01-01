@@ -82,8 +82,8 @@ start
         sta $d020
         stx $d021
 
-        lda #$0c
-        sta delay + 3
+;        lda #$47
+;        sta delay + 3
 
         jsr sprites_setup
 
@@ -357,8 +357,52 @@ scroll_color
         bne -
         stx $d020
         stx $d021
+        lda #$92 + 50
+        jsr sprites_set_ypos
+ 
 
-        jsr update_delay
+        ldx #03
+-       dex
+        bne -
+        lda #$06
+        sta $d020
+        sta $d021
+       ldx #3*9  ; logo index
+        jsr sprites_set_xpos
+        lda #$03
+        ldx #$01
+        ldy #$0e
+        jsr sprites_set_colors
+
+        lda #$ff
+        sta $d017
+
+        ; jsr                   6
+        ; 24 * cpx #$e0         48
+        ; 4 * cpx #$e0          8
+        ; cpx #$24              2
+        ; nop                   2
+        ; rts                   6
+        ;
+        ; +                     74
+
+        ldx #15
+-       dex
+        bne -
+
+;        jsr delay
+        jsr open_border_1
+        ldx #$05
+-       dex
+        bne -
+        ;lda #0          ; 2
+        stx $d021       ; 4
+        stx $d020       ; 4
+
+
+
+
+;        jsr update_delay
 
 ;        lda #0
  ;       sta $d020
@@ -399,6 +443,7 @@ irq1
         jsr do_sinus_logo_0
         jsr do_sinus_logo_1
         jsr do_sinus_logo_2
+        jsr do_sinus_logo_3
         inc $d020
 
         ldy #RASTER
@@ -508,6 +553,16 @@ do_sinus_logo_2
         inc do_sinus_logo_2 + 1
         rts
 
+do_sinus_logo_3
+        lda #$60
+        and #$7f
+        tay
+        lda sinus,y
+        ldx #27
+        jsr calc_sprites_xpos
+        inc do_sinus_logo_3 + 1
+        rts
+
 
 
 
@@ -564,12 +619,11 @@ open_border_2
         ;lda $d018
         ;eor #$10
         ;sta $d018
-nop
-nop
-nop
-nop
-nop
-
+        nop
+        nop
+        nop
+        nop
+        nop
         bit $ea         ; 3
         dex             ;2
         bpl -           ; 3 when brach, 2 when not
@@ -610,8 +664,8 @@ colors
     .byte 6, 0, 4, 0, 14, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 14, 0, 4, 0, 6, 0
         .byte 9, 0, 8, 0, 10, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 10, 0, 8, 0, 9, 0
 
-
-update_delay
+.if 0
+update_delay .proc
         lda #7
         beq +
         dec update_delay + 1
@@ -630,8 +684,9 @@ update_delay
         and #$7f
         sta delay + 3
         rts
+.pend
 
-.align 256
+;.align 256
 
 delay
         lda #0
@@ -639,8 +694,12 @@ delay
 +       .fill 128, $e0
         bit $ea
         rts
+.fi
 
-; Input: A
+
+; Set sprite YPOS quickly
+;
+; @input A      ypos
 sprites_set_ypos .proc
         sta $d001
         sta $d003
@@ -665,6 +724,34 @@ sprites_set_xpos .proc
         sta $d010
         rts
         .pend
+
+
+; X = sprite xpos + msb table index (ie $00, $11, $22, $33)
+calc_sprites_xpos .proc
+        xpos = ZP
+        xmsb = ZP + 1
+
+        sta xpos
+        ldy #0
+        sty xmsb
+-
+        lda xpos
+        clc
+        adc spr_xpos_add,y
+        sta spr_xpos_table,x
+        bcc +
+        lda spr_xpos_msbbit,y
+        ora xmsb
+        sta xmsb
++
+        inx
+        iny
+        cpy #8
+        bne -
+        lda xmsb
+        sta spr_xpos_table,x
+        rts
+.pend
 
 
 ; SID at temp place
@@ -708,37 +795,11 @@ swap_sid .proc
 .binary "sprites-stretched.bin"
 
 
-; X = sprite xpos + msb table index (ie $00, $11, $22, $33)
-calc_sprites_xpos .proc
-        xpos = ZP
-        xmsb = ZP + 1
-
-        sta xpos
-        ldy #0
-        sty xmsb
--
-        lda xpos
-        clc
-        adc spr_xpos_add,y
-        sta spr_xpos_table,x
-        bcc +
-        lda spr_xpos_msbbit,y
-        ora xmsb
-        sta xmsb
-+
-        inx
-        iny
-        cpy #8
-        bne -
-        lda xmsb
-        sta spr_xpos_table,x
-        rts
-.pend
 
 
 .align 256
 
-scroller_clear
+scroller_clear .proc
         ldx #0
         txa
 -       sta SCROLL_SPRITES,x
@@ -746,4 +807,4 @@ scroller_clear
         inx
         bne -
         rts
-
+.pend
