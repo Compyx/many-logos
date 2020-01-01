@@ -28,6 +28,8 @@
 
         NUM_LOGOS = 4
 
+
+
 .if USE_SYSLINE=1
 ; BASIC SYS line
         * = $0801
@@ -80,7 +82,7 @@ start
         sta $d020
         stx $d021
 
-        lda #$59
+        lda #$0c
         sta delay + 3
 
         jsr sprites_setup
@@ -214,8 +216,8 @@ logo1_ypos        lda #$46
         nop
         bit $ea
  
-        lda #$0f
-        ldx #$07
+        lda #$07
+        ldx #$01
         ldy #$0a
         jsr sprites_set_colors
 
@@ -295,6 +297,67 @@ scroll_color
 
         jsr open_border_2
 
+        ldx #$03
+-       dex
+        bne -
+
+        ldx #(SPRITES_LOAD + $0200) / 64
+.for i = 0, i < 7, i += 1
+        stx POINTERS1 + i
+        inx
+.next
+        stx POINTERS1 + 7
+
+        ldx #0
+        stx $d020
+        stx $d021
+
+        stx $d01d
+        dex
+        stx $d017
+        stx $d01c
+        lda #$c0
+        sta $d018
+
+        lda #$09
+        sta $d020
+        sta $d021
+
+        lda #$93
+        jsr sprites_set_ypos
+        nop
+        ldx #9*2  ; logo index
+        jsr sprites_set_xpos
+        lda #$03
+        ldx #$01
+        ldy #$05
+        jsr sprites_set_colors
+
+        ; JSR =                          6
+        ; lda #0 ;                       2
+        ; beq ; 3                        3
+        ; $70 -> $38  => * 2 = 56 *2 = 112
+        ; 5 * $e0 ->                    10
+        ; bit $ea ; 3                    3
+        ; rts  =6                        6
+        ; +
+        ;                               142
+        ;jsr delay
+
+        ; 2
+        ; x * 5
+        ; 4
+
+        ldx #27
+-       dex
+        bne -
+        jsr open_border_1
+        ldx #03
+-       dex
+        bne -
+        stx $d020
+        stx $d021
+
         jsr update_delay
 
 ;        lda #0
@@ -335,6 +398,7 @@ irq1
         jsr sprites_setup
         jsr do_sinus_logo_0
         jsr do_sinus_logo_1
+        jsr do_sinus_logo_2
         inc $d020
 
         ldy #RASTER
@@ -425,7 +489,7 @@ do_sinus_logo_0
         rts
 
 do_sinus_logo_1
-        lda #$40
+        lda #$20
         and #$7f
         tay
         lda sinus,y
@@ -433,6 +497,17 @@ do_sinus_logo_1
         jsr calc_sprites_xpos
         inc do_sinus_logo_1 + 1
         rts
+
+do_sinus_logo_2
+        lda #$40
+        and #$7f
+        tay
+        lda sinus,y
+        ldx #18
+        jsr calc_sprites_xpos
+        inc do_sinus_logo_2 + 1
+        rts
+
 
 
 
@@ -470,7 +545,7 @@ open_border_1
 
 open_border_2
         ldy #8
-        ldx #23
+        ldx #22
 -       lda colors,x    ; 4
         dec $d016       ; 6
         sty $d016       ; 4
