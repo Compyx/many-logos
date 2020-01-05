@@ -176,6 +176,7 @@ irq0a
 bit $ea
 
        ; jsr delay       ; $56
+logo0_bg
         lda #$0b
         sta $d020
         sta $d021
@@ -185,9 +186,9 @@ bit $ea
         nop
         ldx #0  ; logo index
         jsr sprites_set_xpos
-        lda #$0f
-        ldx #$01
-        ldy #$0c
+logo0_mid lda #$0f
+logo0_hi  ldx #$01
+logo0_lo  ldy #$0c
         jsr sprites_set_colors
 
         lda #$ff
@@ -210,15 +211,15 @@ logo1_ypos        lda #$46
         ldx #$08
 -       dex
         bne -
-        lda #$02
+logo1_bg        lda #$02
         sta $d020
         sta $d021
         nop
         bit $ea
  
-        lda #$07
-        ldx #$01
-        ldy #$0a
+logo1_mid    lda #$07
+logo1_hi ldx #$01
+logo1_lo ldy #$0a
         jsr sprites_set_colors
 
 ;        lda #$33        ; 2
@@ -444,7 +445,11 @@ irq1
         jsr do_sinus_logo_1
         jsr do_sinus_logo_2
         jsr do_sinus_logo_3
-        inc $d020
+
+         dec $d020
+        ;jsr do_logo_0_wipe
+        ;jsr do_logo_1_wipe
+        sta $d020
 
         ldy #RASTER
         lda #<irq0
@@ -563,10 +568,9 @@ do_sinus_logo_3
         inc do_sinus_logo_3 + 1
         rts
 
+        .align 256
 
 
-
-.align 256
 open_border_1
         ldy #8
         ldx #42
@@ -636,7 +640,99 @@ open_border_2
 sinus
         .byte 128 + 127.5 * sin(range(128) * rad(360.0/128))
 
+wipe_colors     .byte 0, 0, 0, 0
 
+
+do_logo_0_wipe .proc
+        ldx #$00
+        jsr do_wipes
+        stx do_logo_0_wipe + 1
+        lda wipe_colors + 0
+        sta logo0_bg + 1
+        lda wipe_colors + 1
+        sta logo0_lo + 1
+        lda wipe_colors + 2
+        sta logo0_mid + 1
+        lda wipe_colors + 3
+        sta logo0_hi + 1
+        rts
+.pend
+
+
+do_logo_1_wipe .proc
+        ldx #(wipes_1 - wipes) / 2
+
+        jsr do_wipes
+        stx do_logo_1_wipe + 1
+        lda wipe_colors + 0
+        sta logo1_bg + 1
+        lda wipe_colors + 1
+        sta logo1_lo + 1
+        lda wipe_colors + 2
+        sta logo1_mid + 1
+        lda wipe_colors + 3
+        sta logo1_hi + 1
+        rts
+.pend
+
+do_wipes .proc
+        lda #4
+        beq +
+        dec do_wipes + 1
+        rts
++       lda #4
+        sta do_wipes + 1
+
+        txa
+        asl
+        tax
+        lda wipes,x
+        cmp #$ff
+        beq reset
+        cmp #$80
+        bne +
+
+        ;set delay
+        lda wipes + 1,x
+        sta do_wipes + 1
+        txa
+        lsr
+        tax
+        inx
+        rts
+
+reset
+        lda #4
+        sta do_wipes + 1
+        ldx #00
+        rts
++
+        pha
+        and #$0f
+        sta wipe_colors + 1
+        pla
+        lsr
+        lsr
+        lsr
+        lsr
+        sta wipe_colors + 0
+
+        lda wipes + 1,x
+        pha
+        and #$0f
+        sta wipe_colors + 3
+        pla
+        lsr
+        lsr
+        lsr
+        lsr
+        sta wipe_colors + 2
+        txa
+        lsr
+        tax
+        inx
+        rts
+.pend
 
 
 
@@ -649,20 +745,62 @@ sinus
 ; return: Y = $d010
 
 
-;
+; move to zp
 spr_xpos_table  .fill NUM_LOGOS * $09, 0
-
 
 
 spr_xpos_add    .byte $00, $18, $30, $48, $60, $78, $90,$a8
 spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80
 
 
-
 .align 256
 colors
-    .byte 6, 0, 4, 0, 14, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 14, 0, 4, 0, 6, 0
+        .byte 6, 0, 4, 0, 14, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 14, 0, 4, 0, 6, 0
         .byte 9, 0, 8, 0, 10, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 10, 0, 8, 0, 9, 0
+
+
+wipes
+        .byte $00, $00
+        ; grey
+        .byte $00, $0b
+        .byte $00, $bc
+        .byte $0b, $cf
+        .byte $bc, $f1
+        .byte $80, $c0
+        .byte $0b, $cf
+        .byte $00, $bc
+        .byte $00, $0b
+wipes_1
+        .byte $00, $00
+
+
+        ; red
+        .byte $00, $02
+        .byte $00, $2a
+        .byte $02, $a7
+        .byte $2a, $71
+        .byte $80, $c0
+        .byte $02, $a7
+        .byte $00, $2a
+        .byte $00, $02
+        .byte $00, $00
+
+        ; blue
+        .byte $00, $06
+        .byte $00, $64
+        .byte $06, $4e
+        .byte $64, $e3
+        .byte $4e, $31
+        .byte $6e, $31
+        .byte $80, $c0
+        .byte $06, $e3
+        .byte $00, $6e
+        .byte $00, $06
+        .byte $00, $00
+
+
+        .byte $ff, $00
+
 
 .if 0
 update_delay .proc
