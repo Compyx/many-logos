@@ -749,7 +749,7 @@ reset
 spr_xpos_table  .fill NUM_LOGOS * $09, 0
 
 
-spr_xpos_add    .byte $00, $18, $30, $48, $60, $78, $90,$a8
+spr_xpos_add    .byte $00, $18, $30, $48, $60, $78, $90, $a8, $c0
 spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80
 
 
@@ -876,9 +876,9 @@ calc_sprites_xpos .proc
         lda xpos
         clc
         adc spr_xpos_add,y
-        sta spr_xpos_table,x
+        sta spr_xpos_table + 1,x
         bcc +
-        lda spr_xpos_msbbit,y
+        lda spr_xpos_msbbit+ 1,y
         ora xmsb
         sta xmsb
 +
@@ -886,8 +886,25 @@ calc_sprites_xpos .proc
         iny
         cpy #8
         bne -
+
         lda xmsb
-        sta spr_xpos_table,x
+        sta spr_xpos_table + 8 - 8,x
+
+        lda xpos
+        cmp #$18
+        bcc +
+        sbc #$18
+        sta spr_xpos_table + 0  -8,x
+        rts
++
+        adc #$e0
+        sta spr_xpos_table + 0- 8,x
+        lda xmsb
+        ora #1
+        sta spr_xpos_table + 8 - 8,x
+
+
+
         rts
 .pend
 
