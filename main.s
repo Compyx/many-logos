@@ -45,10 +45,6 @@
         * = $3000
 start
         cld
-        sei
-        ldx #$ff
-        txs
-
         jsr swap_sid
  ;       stx $d015
   ;      stx $d01d
@@ -57,8 +53,14 @@ start
         sta $dd0d
         bit $dc0d
         bit $dd0d
+        inc $d019
         lda #$35
         sta $01
+        sei
+        ldx #$ff
+        txs
+
+
  
         lda #<irq0
         ldx #>irq0
@@ -79,7 +81,6 @@ start
         stx $3fff
         inx
         stx $d01a
-        inc $d019
 
         lda #$0c
         ldx #$0b
@@ -369,14 +370,14 @@ logo2_lo        ldy #$05
         ldx #03
 -       dex
         bne -
-        lda #$06
+logo3_bg lda #$06
         sta $d020
         sta $d021
        ldx #3*9  ; logo index
         jsr sprites_set_xpos
-        lda #$03
-        ldx #$01
-        ldy #$0e
+logo3_mid lda #$03
+logo3_hi        ldx #$01
+logo3_lo        ldy #$0e
         jsr sprites_set_colors
 
         lda #$ff
@@ -453,7 +454,7 @@ irq1
          dec $d020
         jsr do_logo_0_wipe
         ;jsr do_logo_1_wipe
-        sta $d020
+        inc $d020
 
         ldy #RASTER
         lda #<irq0
@@ -648,18 +649,27 @@ color_ptrs
         .word logo0_bg + 1, logo0_lo + 1, logo0_mid + 1, logo0_hi + 1
         .word logo1_bg + 1, logo1_lo + 1, logo1_mid + 1, logo1_hi + 1
         .word logo2_bg + 1, logo2_lo + 1, logo2_mid + 1, logo2_hi + 1
+        .word logo3_bg + 1, logo3_lo + 1, logo3_mid + 1, logo3_hi + 1
 
 
 do_logo_0_wipe .proc
         ldy #$00
-next
-        sty ZP_TMP
 
-        ldx wipe_index,y
-        jsr do_wipes
-        txa
-        sta wipe_index,y
 
+        logo_index = ZP_TMP
+        code_ptrs = ZP_TMP + 1 ; 2 bytes
+        col_index = ZP_TMP + 4
+
+delay   lda #4
+        beq +
+        dec delay + 1
+        rts
++
+        lda #4
+        sta delay + 1
+
+loop
+        sty logo_index
         tya
         clc
         asl
@@ -670,9 +680,9 @@ next
         ldx #0
 -
         lda color_ptrs + 0,y
-        sta ZP_TMP + 1,x
+        sta code_ptrs + 0,x
         lda color_ptrs + 1,y
-        sta ZP_TMP + 2,x
+        sta code_ptrs + 1,x
 
         iny
         iny
@@ -681,22 +691,50 @@ next
         cpx #8
         bne -
 
-        ldy #0
+
+
+        ldx logo_index
+        lda wipe_index,x
+        asl
+        tay
+
+        ldx #2
+        lda wipes,y
+        pha
+        sta (code_ptrs,x)
+        pla
+        lsr
+        lsr
+        lsr
+        lsr
         ldx #0
--
-        lda wipe_colors,y
-        sta (ZP_TMP + 1,x)
-        inx
-        inx
+        sta (code_ptrs,x)
+        lda wipes + 1,y
+        pha
+        ldx #6
+        sta (code_ptrs,x)
+        pla
+        lsr
+        lsr
+        lsr
+        lsr
+        ldx #4
+        sta (code_ptrs,x)
+
+next
+        ldy logo_index
+        lda wipe_index,y
+        clc
+        adc #1
+        cmp #(wipes_end - wipes) /2
+        bcc +
+        lda #0
++
+        sta wipe_index,y
+
         iny
         cpy #4
-        bne -
-
-        ldy ZP_TMP + 0
-        iny
-        cpy #3
-        bne next
-
+        bne loop
         rts
 .pend
 
@@ -778,8 +816,8 @@ spr_xpos_table  .fill NUM_LOGOS * $09, 0
 
 spr_xpos_add    .byte $00, $18, $30, $48, $60, $78, $90, $a8, $c0
 spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80, $00
-wipe_index      .byte 0, wipes_1 - wipes, wipes_2 - wipes, wipes_3 - wipes
-wipe_delay      .byte 0, 0, 0, 0
+wipe_index      .byte 0, (wipes_1 - wipes) / 2, (wipes_2 - wipes) / 2, (wipes_3 - wipes)/2
+wipe_delay      .byte 3, 3, 3, 3
 
 .align 256
 colors
@@ -794,7 +832,16 @@ wipes
         .byte $00, $bc
         .byte $0b, $cf
         .byte $bc, $f1
-        .byte $80, $40
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $bc, $f1
         .byte $0b, $cf
         .byte $00, $bc
         .byte $00, $0b
@@ -807,7 +854,17 @@ wipes_1
         .byte $00, $2a
         .byte $02, $a7
         .byte $2a, $71
-        .byte $80, $40
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
         .byte $02, $a7
         .byte $00, $2a
         .byte $00, $02
@@ -820,7 +877,16 @@ wipes_2
         .byte $09, $85
         .byte $98, $5d
         .byte $85, $d1
-        .byte $80, $40
+        .byte $85, $d1
+        .byte $85, $d1
+        .byte $85, $d1
+        .byte $85, $d1
+        .byte $85, $d1
+        .byte $85, $d1
+        .byte $85, $d1
+        .byte $85, $d1
+        .byte $85, $d1
+        .byte $85, $d1
         .byte $98, $5d
         .byte $09, $85
         .byte $00, $98
@@ -834,14 +900,19 @@ wipes_3
         .byte $64, $e3
         .byte $4e, $31
         .byte $6e, $31
-        .byte $80, $40
+        .byte $6e, $31
+        .byte $6e, $31
+        .byte $6e, $31
+        .byte $6e, $31
+        .byte $6e, $31
+        .byte $6e, $31
+        .byte $6e, $31
+        .byte $6e, $31
         .byte $06, $e3
         .byte $00, $6e
         .byte $00, $06
         .byte $00, $00
-
-
-        .byte $ff, $00
+wipes_end
 
 
 .if 0
