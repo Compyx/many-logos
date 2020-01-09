@@ -510,24 +510,24 @@ sprites_set_colors .proc
         .pend
 
 set_scroll_xpos .proc
-        lda #$00
+        lda #$f0
         sta $d000
-        lda #$30
+        lda #$28
         sta $d002
-        lda #$60
+        lda #$58
         sta $d004
-        lda #$90
+        lda #$88
         sta $d006
-        lda #$b0
+        lda #$b8
         sta $d008
-        lda #$d0
+        lda #$e8
         sta $d00a
-        lda #$00
+        lda #$18
         sta $d00c
-        lda #$30
+        lda #$48
         sta $d00e
 
-        lda #$c0
+        lda #$c1
         sta $d010
         rts
 .pend
@@ -612,8 +612,8 @@ open_border_2
         ldx #22
 -       lda colors,x    ; 4
         dec $d016       ; 6
-        sty $d016       ; 4
         sta $d021       ; 4
+        sty $d016       ; 4
         
         nop             ; 2 * 10
         nop
