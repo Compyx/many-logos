@@ -22,7 +22,11 @@
 
         POINTERS0 = $33f8
         POINTERS1 = $37f8
-        ZP = $02
+
+        ZP_TMP = $02
+        ZP = $12
+
+
 
         RASTER = $0d
 
@@ -320,7 +324,7 @@ scroll_color
         lda #$c0
         sta $d018
 
-        lda #$09
+logo2_bg lda #$09
         sta $d020
         sta $d021
 
@@ -329,9 +333,9 @@ scroll_color
         nop
         ldx #9*2  ; logo index
         jsr sprites_set_xpos
-        lda #$03
-        ldx #$01
-        ldy #$05
+logo2_mid       lda #$03
+logo2_hi        ldx #$01
+logo2_lo        ldy #$05
         jsr sprites_set_colors
 
         ; JSR =                          6
@@ -447,7 +451,7 @@ irq1
         jsr do_sinus_logo_3
 
          dec $d020
-        ;jsr do_logo_0_wipe
+        jsr do_logo_0_wipe
         ;jsr do_logo_1_wipe
         sta $d020
 
@@ -640,73 +644,94 @@ open_border_2
 sinus
         .byte 128 + 127.5 * sin(range(128) * rad(360.0/128))
 
-wipe_colors     .byte 0, 0, 0, 0
+color_ptrs
+        .word logo0_bg + 1, logo0_lo + 1, logo0_mid + 1, logo0_hi + 1
+        .word logo1_bg + 1, logo1_lo + 1, logo1_mid + 1, logo1_hi + 1
+        .word logo2_bg + 1, logo2_lo + 1, logo2_mid + 1, logo2_hi + 1
 
 
 do_logo_0_wipe .proc
-        ldx #$00
+        ldy #$00
+next
+        sty ZP_TMP
+
+        ldx wipe_index,y
         jsr do_wipes
-        stx do_logo_0_wipe + 1
-        lda wipe_colors + 0
-        sta logo0_bg + 1
-        lda wipe_colors + 1
-        sta logo0_lo + 1
-        lda wipe_colors + 2
-        sta logo0_mid + 1
-        lda wipe_colors + 3
-        sta logo0_hi + 1
+        txa
+        sta wipe_index,y
+
+        tya
+        clc
+        asl
+        asl
+        asl
+        tay
+
+        ldx #0
+-
+        lda color_ptrs + 0,y
+        sta ZP_TMP + 1,x
+        lda color_ptrs + 1,y
+        sta ZP_TMP + 2,x
+
+        iny
+        iny
+        inx
+        inx
+        cpx #8
+        bne -
+
+        ldy #0
+        ldx #0
+-
+        lda wipe_colors,y
+        sta (ZP_TMP + 1,x)
+        inx
+        inx
+        iny
+        cpy #4
+        bne -
+
+        ldy ZP_TMP + 0
+        iny
+        cpy #3
+        bne next
+
         rts
 .pend
 
 
-do_logo_1_wipe .proc
-        ldx #(wipes_1 - wipes) / 2
-
-        jsr do_wipes
-        stx do_logo_1_wipe + 1
-        lda wipe_colors + 0
-        sta logo1_bg + 1
-        lda wipe_colors + 1
-        sta logo1_lo + 1
-        lda wipe_colors + 2
-        sta logo1_mid + 1
-        lda wipe_colors + 3
-        sta logo1_hi + 1
-        rts
-.pend
 
 do_wipes .proc
-        lda #4
+        lda wipe_delay,y
         beq +
-        dec do_wipes + 1
+        lda wipe_delay,y
+        sec
+        sbc #1
+        sta wipe_delay,y
         rts
-+       lda #4
-        sta do_wipes + 1
++       lda #3
+        sta wipe_delay,y
 
-        txa
-        asl
-        tax
         lda wipes,x
         cmp #$ff
         beq reset
         cmp #$80
-        bne +
+        bne more
 
         ;set delay
         lda wipes + 1,x
-        sta do_wipes + 1
-        txa
-        lsr
-        tax
+        sta wipe_delay,y
+        inx
         inx
         rts
 
 reset
-        lda #4
-        sta do_wipes + 1
-        ldx #00
+        lda #3
+        sta wipe_delay,y
+        ldx #$00
         rts
-+
+more
         pha
         and #$0f
         sta wipe_colors + 1
@@ -727,9 +752,7 @@ reset
         lsr
         lsr
         sta wipe_colors + 2
-        txa
-        lsr
-        tax
+        inx
         inx
         rts
 .pend
@@ -745,13 +768,18 @@ reset
 ; return: Y = $d010
 
 
+
+wipe_colors     .byte 0, 0, 0, 0
+
+
 ; move to zp
 spr_xpos_table  .fill NUM_LOGOS * $09, 0
 
 
 spr_xpos_add    .byte $00, $18, $30, $48, $60, $78, $90, $a8, $c0
-spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80
-
+spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80, $00
+wipe_index      .byte 0, wipes_1 - wipes, wipes_2 - wipes, wipes_3 - wipes
+wipe_delay      .byte 0, 0, 0, 0
 
 .align 256
 colors
@@ -766,7 +794,7 @@ wipes
         .byte $00, $bc
         .byte $0b, $cf
         .byte $bc, $f1
-        .byte $80, $c0
+        .byte $80, $40
         .byte $0b, $cf
         .byte $00, $bc
         .byte $00, $0b
@@ -779,12 +807,26 @@ wipes_1
         .byte $00, $2a
         .byte $02, $a7
         .byte $2a, $71
-        .byte $80, $c0
+        .byte $80, $40
         .byte $02, $a7
         .byte $00, $2a
         .byte $00, $02
         .byte $00, $00
+wipes_2
 
+        ; green
+        .byte $00, $09
+        .byte $00, $98
+        .byte $09, $85
+        .byte $98, $5d
+        .byte $85, $d1
+        .byte $80, $40
+        .byte $98, $5d
+        .byte $09, $85
+        .byte $00, $98
+        .byte $00, $09
+        .byte $00, $00
+wipes_3
         ; blue
         .byte $00, $06
         .byte $00, $64
@@ -792,7 +834,7 @@ wipes_1
         .byte $64, $e3
         .byte $4e, $31
         .byte $6e, $31
-        .byte $80, $c0
+        .byte $80, $40
         .byte $06, $e3
         .byte $00, $6e
         .byte $00, $06
@@ -963,3 +1005,12 @@ scroller_clear .proc
         bne -
         rts
 .pend
+
+
+scroller_render .proc
+        ldx #0
+
+        lda SCROLL_SPRITES
+.pend
+
+
