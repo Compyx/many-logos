@@ -45,6 +45,11 @@
         * = $3000
 start
         cld
+        sei
+        ldx #$ff
+        txs
+
+
         jsr swap_sid
  ;       stx $d015
   ;      stx $d01d
@@ -53,13 +58,8 @@ start
         sta $dd0d
         bit $dc0d
         bit $dd0d
-        inc $d019
         lda #$35
         sta $01
-        sei
-        ldx #$ff
-        txs
-
 
  
         lda #<irq0
@@ -81,7 +81,7 @@ start
         stx $3fff
         inx
         stx $d01a
-
+        inc $d019
         lda #$0c
         ldx #$0b
         sta $d020
@@ -642,8 +642,10 @@ open_border_2
         rts
 
 
+        SIN_WIDTH =28 * 8
+
 sinus
-        .byte 128 + 127.5 * sin(range(128) * rad(360.0/128))
+        .byte SIN_WIDTH / 2 + (SIN_WIDTH / 2.0 - 0.5) * sin(range(128) * rad(360.0/128))
 
 color_ptrs
         .word logo0_bg + 1, logo0_lo + 1, logo0_mid + 1, logo0_hi + 1
