@@ -374,7 +374,7 @@ logo3_bg lda #$06
         sta $d021
        ldx #3*9  ; logo index
         jsr sprites_set_xpos
-logo3_mid lda #$03
+logo3_mid       lda #$03
 logo3_hi        ldx #$01
 logo3_lo        ldy #$0e
         jsr sprites_set_colors
@@ -769,7 +769,7 @@ spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80, $00
 wipe_index      .byte 0, (wipes_1 - wipes) / 2, (wipes_2 - wipes) / 2, (wipes_3 - wipes)/2
 
 colors
-        .byte 6, 0, 4, 0, 14, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 14, 0, 4, 0, 6, 0
+        .byte 0, 0, 6, 0, 4, 0, 14, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 14, 0, 4, 0, 6, 0
         .byte 9, 0, 8, 0, 10, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 10, 0, 8, 0, 9, 0
 
 
@@ -824,17 +824,17 @@ wipes_2
         .byte $00, $98
         .byte $09, $85
         .byte $98, $5d
-        .byte $85, $d1
-        .byte $85, $d1
-        .byte $85, $d1
-        .byte $85, $d1
-        .byte $85, $d1
-        .byte $85, $d1
-        .byte $85, $d1
-        .byte $85, $d1
-        .byte $85, $d1
-        .byte $85, $d1
-        .byte $85, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
         .byte $98, $5d
         .byte $09, $85
         .byte $00, $98
@@ -969,108 +969,6 @@ calc_sprites_xpos .proc
         rts
 .pend
 
-
-; SID at temp place
-;               * = SID_LOAD
-
-        * = $3800
-        SID_TEMP = *
-
-.binary  format("%s", SID_PATH), $7e
-
-       SID_TEMP_END = *
-
-swap_sid .proc
-        ldx #0
--
-        ldy SID_TEMP,x
-        lda SID_LOAD,x
-        sta SID_TEMP,x
-        tya
-        sta SID_LOAD,x
-        inx
-        bne -
--
-        ldy SID_TEMP + 256,x
-        lda SID_LOAD + 256,x
-        sta SID_TEMP + 256,x
-        tya
-        sta SID_LOAD + 256,x
-
-        ; don't copy too much, otherwise this routine moves itself, leading to
-        ; some interesting bugs.
-        inx
-        cpx #(SID_TEMP_END - SID_TEMP) & $0ff
-        bne -
-        rts
-.pend
-
-
-; FOCUS logo
-        * = SPRITES_LOAD        ; $3c00-$3fff
-.binary "sprites-stretched.bin"
-
-
-
-
-.align 256
-
-scroller_clear .proc
-        ldx #0
-        txa
--       sta SCROLL_SPRITES,x
-        sta SCROLL_SPRITES + 1,x
-        inx
-        bne -
-        rts
-.pend
-
-
-scroller_rol .proc
-
-        ldx #0
--
-        clc
-        rol SCROLL_SPRITES + $1c2,x
-        rol SCROLL_SPRITES + $1c1,x
-        rol SCROLL_SPRITES + $1c0,x
-
-        rol SCROLL_SPRITES + $182,x
-        rol SCROLL_SPRITES + $181,x
-        rol SCROLL_SPRITES + $180,x
-
-        rol SCROLL_SPRITES + $142,x
-        rol SCROLL_SPRITES + $141,x
-        rol SCROLL_SPRITES + $140,x
-
-        rol SCROLL_SPRITES + $102,x
-        rol SCROLL_SPRITES + $101,x
-        rol SCROLL_SPRITES + $100,x
-
-        rol SCROLL_SPRITES + $0c2,x
-        rol SCROLL_SPRITES + $0c1,x
-        rol SCROLL_SPRITES + $0c0,x
-
-        rol SCROLL_SPRITES + $082,x
-        rol SCROLL_SPRITES + $081,x
-        rol SCROLL_SPRITES + $080,x
-
-        rol SCROLL_SPRITES + $042,x
-        rol SCROLL_SPRITES + $041,x
-        rol SCROLL_SPRITES + $040,x
-
-        rol SCROLL_SPRITES + $002,x
-        rol SCROLL_SPRITES + $001,x
-        rol SCROLL_SPRITES + $000,x
-
-        inx
-        inx
-        inx
-        cpx #8*3
-        bne -
-        rts
-.pend
-
 ;masks   .byte $80, $40, $20, $10, $08, $04, $02, $01
 masks   .byte $01, $02, $04, $08, $10, $20, $40, $80
 
@@ -1129,9 +1027,102 @@ font    lda $fce2,x
         rts
 .pend
 
+scroller_rol .proc
+
+        ldx #0
+-
+        clc
+        rol SCROLL_SPRITES + $1c2,x
+        rol SCROLL_SPRITES + $1c1,x
+        rol SCROLL_SPRITES + $1c0,x
+
+        rol SCROLL_SPRITES + $182,x
+        rol SCROLL_SPRITES + $181,x
+        rol SCROLL_SPRITES + $180,x
+
+        rol SCROLL_SPRITES + $142,x
+        rol SCROLL_SPRITES + $141,x
+        rol SCROLL_SPRITES + $140,x
+
+        rol SCROLL_SPRITES + $102,x
+        rol SCROLL_SPRITES + $101,x
+        rol SCROLL_SPRITES + $100,x
+
+        rol SCROLL_SPRITES + $0c2,x
+        rol SCROLL_SPRITES + $0c1,x
+        rol SCROLL_SPRITES + $0c0,x
+
+        rol SCROLL_SPRITES + $082,x
+        rol SCROLL_SPRITES + $081,x
+        rol SCROLL_SPRITES + $080,x
+
+        rol SCROLL_SPRITES + $042,x
+        rol SCROLL_SPRITES + $041,x
+        rol SCROLL_SPRITES + $040,x
+
+        rol SCROLL_SPRITES + $002,x
+        rol SCROLL_SPRITES + $001,x
+        rol SCROLL_SPRITES + $000,x
+
+        inx
+        inx
+        inx
+        cpx #8*3
+        bne -
+        rts
+.pend
+
 
 scroll_text
         .enc "screen"
         .text "abcdefghiklmnopqrstxz !@#$%&*() hello world! ... focus rules!"
         .byte $ff
+
+
+; SID at temp place
+;               * = SID_LOAD
+
+        * = $3800
+        SID_TEMP = *
+
+.binary  format("%s", SID_PATH), $7e
+
+       SID_TEMP_END = *
+
+swap_sid .proc
+        ldx #0
+-
+        ldy SID_TEMP,x
+        lda SID_LOAD,x
+        sta SID_TEMP,x
+        tya
+        sta SID_LOAD,x
+        inx
+        bne -
+-
+        ldy SID_TEMP + 256,x
+        lda SID_LOAD + 256,x
+        sta SID_TEMP + 256,x
+        tya
+        sta SID_LOAD + 256,x
+
+        ; don't copy too much, otherwise this routine moves itself, leading to
+        ; some interesting bugs.
+        inx
+        cpx #(SID_TEMP_END - SID_TEMP) & $0ff
+        bne -
+        rts
+.pend
+
+; FOCUS logo
+        * = SPRITES_LOAD        ; $3c00-$3fff
+.binary "sprites-stretched.bin"
+
+
+
+
+
+
+
+
 
