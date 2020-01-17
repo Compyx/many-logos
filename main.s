@@ -589,19 +589,9 @@ open_border_1
 -       lda colors,x    ; 4
         dec $d016       ; 6
         sty $d016       ; 4
-        ;sta $d021       ; 4
+        cmp ($c1,x)     ; 6
+        cmp ($c1,x)     ; 6
         nop
-        nop
-        nop             ; 2 * 10
-        nop
-        nop
-        nop
-        nop
-;        nop
-;        nop
-;        nop
-;        nop
-;        nop
         lda $d018
         eor #$10
         sta $d018
@@ -621,24 +611,10 @@ open_border_2
         dec $d016       ; 6
         sta $d021       ; 4
         sty $d016       ; 4
-        
-        nop             ; 2 * 10
-        nop
-        nop
-        nop
-        nop
-;        nop
-;        nop
-;        nop
-;        nop
-;        nop
-        ;lda $d018
-        ;eor #$10
-        ;sta $d018
-        nop
-        nop
-        nop
-        nop
+
+        cmp ($c1,x)
+        cmp ($c1,x)
+        cmp ($c1,x)
         nop
         bit $ea         ; 3
         dex             ;2
@@ -669,12 +645,12 @@ do_logo_0_wipe .proc
         code_ptrs = ZP_TMP + 1 ; 2 bytes
         col_index = ZP_TMP + 4
 
-delay   lda #4
+delay   lda #3
         beq +
         dec delay + 1
         rts
 +
-        lda #4
+        lda #3
         sta delay + 1
 
 loop
