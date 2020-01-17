@@ -1,9 +1,8 @@
 ; vim: set et ts=8 sw=8 sts=8 fdm=marker syntax=64tass:
 ;
-; 2019 CSDb intro compo 4KB entry - logo stretcher or so
+; 2019 CSDb intro compo 4KB entry - four focus logos in four KB
 ;
 ; Code & gfx:   Compyx/Focus
-;
 ;
 ;        SID_LOAD = $1000
 ;        SID_PATH = "Old_Level_2.sid"
@@ -18,7 +17,7 @@
         SID_PLAY = SID_LOAD + 4
 
         SPRITES_LOAD = $3c00
-        SCROLL_SPRITES = $3a00
+        SCROLL_SPRITES = $3a00  ; move into zero page/stack
 
         POINTERS0 = $33f8
         POINTERS1 = $37f8
@@ -44,14 +43,14 @@
 
         * = $3000
 start
+
+        jsr swap_sid
+ 
         cld
         sei
         ldx #$ff
         txs
-
-
-        jsr swap_sid
- ;       stx $d015
+;       stx $d015
   ;      stx $d01d
         lda #$7f
         sta $dc0d
@@ -105,7 +104,7 @@ start
         sei
         lda #$37
         sta $01
-        jsr swap_sid
+        ;jsr swap_sid
         jmp $fce2
 irq0
         pha
@@ -269,7 +268,7 @@ logo1_lo ldy #$0a
         lda #$d5
         sta $d018
         ;ldx #(SCROLL_SPRITES /64)
-        ldx #$1000/64
+        ldx #$3a00/64
 .for i = 0, i < 7, i += 1
         stx POINTERS1 + i
         inx
@@ -452,8 +451,16 @@ irq1
         jsr do_sinus_logo_3
 
          dec $d020
-        jsr do_logo_0_wipe
         ;jsr do_logo_1_wipe
+
+       jsr scroller_rol
+       dec $d020
+       jsr scroller_update
+        dec $d020
+        jsr do_logo_0_wipe
+       inc $d020
+        inc $d020
+        inc $d020
         inc $d020
 
         ldy #RASTER
@@ -742,62 +749,6 @@ next
 
 
 
-do_wipes .proc
-        lda wipe_delay,y
-        beq +
-        lda wipe_delay,y
-        sec
-        sbc #1
-        sta wipe_delay,y
-        rts
-+       lda #3
-        sta wipe_delay,y
-
-        lda wipes,x
-        cmp #$ff
-        beq reset
-        cmp #$80
-        bne more
-
-        ;set delay
-        lda wipes + 1,x
-        sta wipe_delay,y
-        inx
-        inx
-        rts
-
-reset
-        lda #3
-        sta wipe_delay,y
-        ldx #$00
-        rts
-more
-        pha
-        and #$0f
-        sta wipe_colors + 1
-        pla
-        lsr
-        lsr
-        lsr
-        lsr
-        sta wipe_colors + 0
-
-        lda wipes + 1,x
-        pha
-        and #$0f
-        sta wipe_colors + 3
-        pla
-        lsr
-        lsr
-        lsr
-        lsr
-        sta wipe_colors + 2
-        inx
-        inx
-        rts
-.pend
-
-
 
 
 ; $00 = $00,$18,$30,$48,$60,$78,$90,$a8
@@ -809,9 +760,6 @@ more
 
 
 
-wipe_colors     .byte 0, 0, 0, 0
-
-
 ; move to zp
 spr_xpos_table  .fill NUM_LOGOS * $09, 0
 
@@ -819,9 +767,7 @@ spr_xpos_table  .fill NUM_LOGOS * $09, 0
 spr_xpos_add    .byte $00, $18, $30, $48, $60, $78, $90, $a8, $c0
 spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80, $00
 wipe_index      .byte 0, (wipes_1 - wipes) / 2, (wipes_2 - wipes) / 2, (wipes_3 - wipes)/2
-wipe_delay      .byte 3, 3, 3, 3
 
-.align 256
 colors
         .byte 6, 0, 4, 0, 14, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 14, 0, 4, 0, 6, 0
         .byte 9, 0, 8, 0, 10, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 10, 0, 8, 0, 9, 0
@@ -1044,7 +990,7 @@ swap_sid .proc
         sta SID_LOAD,x
         inx
         bne -
-- 
+-
         ldy SID_TEMP + 256,x
         lda SID_LOAD + 256,x
         sta SID_TEMP + 256,x
@@ -1080,10 +1026,112 @@ scroller_clear .proc
 .pend
 
 
-scroller_render .proc
-        ldx #0
+scroller_rol .proc
 
-        lda SCROLL_SPRITES
+        ldx #0
+-
+        clc
+        rol SCROLL_SPRITES + $1c2,x
+        rol SCROLL_SPRITES + $1c1,x
+        rol SCROLL_SPRITES + $1c0,x
+
+        rol SCROLL_SPRITES + $182,x
+        rol SCROLL_SPRITES + $181,x
+        rol SCROLL_SPRITES + $180,x
+
+        rol SCROLL_SPRITES + $142,x
+        rol SCROLL_SPRITES + $141,x
+        rol SCROLL_SPRITES + $140,x
+
+        rol SCROLL_SPRITES + $102,x
+        rol SCROLL_SPRITES + $101,x
+        rol SCROLL_SPRITES + $100,x
+
+        rol SCROLL_SPRITES + $0c2,x
+        rol SCROLL_SPRITES + $0c1,x
+        rol SCROLL_SPRITES + $0c0,x
+
+        rol SCROLL_SPRITES + $082,x
+        rol SCROLL_SPRITES + $081,x
+        rol SCROLL_SPRITES + $080,x
+
+        rol SCROLL_SPRITES + $042,x
+        rol SCROLL_SPRITES + $041,x
+        rol SCROLL_SPRITES + $040,x
+
+        rol SCROLL_SPRITES + $002,x
+        rol SCROLL_SPRITES + $001,x
+        rol SCROLL_SPRITES + $000,x
+
+        inx
+        inx
+        inx
+        cpx #8*3
+        bne -
+        rts
 .pend
 
+;masks   .byte $80, $40, $20, $10, $08, $04, $02, $01
+masks   .byte $01, $02, $04, $08, $10, $20, $40, $80
+
+scroller_update .proc
+
+xpos    ldx #7
+        dex
+        bpl +
+        ldx #7
+        inc index + 1
++
+        stx xpos + 1
+
+index   ldy #0
+        lda scroll_text,y
+        bpl +
+        ldy #0
+        sty index + 1
+        lda scroll_text,y
++
+        asl
+        asl
+        asl
+        sta font + 1
+        lda #$d0
+        adc #0
+        sta font + 2
+
+        lda #$33
+        sta $01
+
+        ldx #0
+        stx ZP + 0
+        ldy #0
+-
+        ldx ZP + 0
+font    lda $fce2,x
+        ldx xpos + 1
+        and masks,x
+        beq +
+        lda #$01
++
+        ora SCROLL_SPRITES + $01c2,y
+        ;ora #$ff
+        sta SCROLL_SPRITES + $01c2,y
+        iny
+        iny
+        iny
+        inc ZP + 0
+        cpy #21
+        bne -
+
+        lda #$35
+        sta $01
+
+        rts
+.pend
+
+
+scroll_text
+        .enc "screen"
+        .text "abcdefghiklmnopqrstxz !@#$%&*() hello world! ... focus rules!"
+        .byte $ff
 
