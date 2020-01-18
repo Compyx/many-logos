@@ -280,10 +280,6 @@ scroll_color
         sta $d027 + c
 .next
         jsr set_scroll_xpos
-        lda #0
-        sta $d020
-        sta $d021
-
         ;jsr delay
 
         ; JSR            6
@@ -299,6 +295,10 @@ scroll_color
         ldx #12
 -       dex
         bne -
+        lda #3
+        sta $d03f
+        sta $d03f
+
 
         jsr open_border_2
 
@@ -313,9 +313,10 @@ scroll_color
 .next
         stx POINTERS1 + 7
 
+        ldx #3
+        stx $d03f
         ldx #0
-        stx $d020
-        stx $d021
+;        stx $d021
 
         stx $d01d
         dex
@@ -745,9 +746,9 @@ spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80, $00
 wipe_index      .byte 0, (wipes_1 - wipes) / 2, (wipes_2 - wipes) / 2, (wipes_3 - wipes)/2
 
 colors
-        .byte 0, 0, 0
+        .byte 0, 0
         .byte $00, $00, $06, $0e, $03, $01, $09, $08
-        .byte $0a, $07
+        .byte $0a, $07, $01
         .fill 16, 0
 
 wipes
