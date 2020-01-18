@@ -275,12 +275,12 @@ logo1_lo ldy #$0a
 .next
         stx POINTERS1 + 7
 scroll_color
-        lda #1
+        lda #0
 .for c = 0, c < 8, c += 1
         sta $d027 + c
 .next
         jsr set_scroll_xpos
-        lda #6
+        lda #0
         sta $d020
         sta $d021
 
@@ -606,7 +606,7 @@ open_border_1
 
 open_border_2
         ldy #8
-        ldx #22
+        ldx #0
 -       lda colors,x    ; 4
         dec $d016       ; 6
         sta $d021       ; 4
@@ -615,10 +615,10 @@ open_border_2
         cmp ($c1,x)
         cmp ($c1,x)
         cmp ($c1,x)
-        nop
         bit $ea         ; 3
-        dex             ;2
-        bpl -           ; 3 when brach, 2 when not
+        inx
+        cpx #23        ;2
+        bne -           ; 3 when brach, 2 when not
                         ;+ ----
                         ; 18 + 20 + 5 + 2 = 
 
@@ -745,9 +745,10 @@ spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80, $00
 wipe_index      .byte 0, (wipes_1 - wipes) / 2, (wipes_2 - wipes) / 2, (wipes_3 - wipes)/2
 
 colors
-        .byte 0, 0, 6, 0, 4, 0, 14, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 14, 0, 4, 0, 6, 0
-        .byte 9, 0, 8, 0, 10, 0, 15, 0, 7, 0, 1, 0, 7, 0, 15, 0, 10, 0, 8, 0, 9, 0
-
+        .byte 0, 0, 0
+        .byte $00, $00, $06, $0e, $03, $01, $09, $08
+        .byte $0a, $07
+        .fill 16, 0
 
 wipes
         .byte $00, $00
@@ -987,14 +988,14 @@ font    lda $fce2,x
         beq +
         lda #$01
 +
-        ora SCROLL_SPRITES + $01c2,y
-        ;ora #$ff
-        sta SCROLL_SPRITES + $01c2,y
+eor #1
+        ora SCROLL_SPRITES + $01c2 + 12,y
+        sta SCROLL_SPRITES + $01c2 +12 ,y
         iny
         iny
         iny
         inc ZP + 0
-        cpy #21
+        cpy #24
         bne -
 
         lda #$35
@@ -1005,7 +1006,7 @@ font    lda $fce2,x
 
 scroller_rol .proc
 
-        ldx #0
+        ldx #12
 -
         clc
         rol SCROLL_SPRITES + $1c2,x
@@ -1043,7 +1044,7 @@ scroller_rol .proc
         inx
         inx
         inx
-        cpx #8*3
+        cpx #8*3 + 12
         bne -
         rts
 .pend
@@ -1089,6 +1090,9 @@ swap_sid .proc
         bne -
         rts
 .pend
+
+        * = SCROLL_SPRITES
+        .fill 512, $ff
 
 ; FOCUS logo
         * = SPRITES_LOAD        ; $3c00-$3fff
