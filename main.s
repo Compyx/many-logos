@@ -17,13 +17,13 @@
         SID_PLAY = SID_LOAD + 4
 
         SPRITES_LOAD = $3c00
-        SCROLL_SPRITES = $3a00  ; move into zero page/stack
+        SCROLL_SPRITES_0 = $0040        ; $0040-$01bf -> 6 sprites
+        SCROLL_SPRITES_1 = $3a00        ; $3a00-$3a7f -> 2 sprites
 
         POINTERS0 = $33f8
         POINTERS1 = $37f8
 
-        ZP_TMP = $02
-        ZP = $12
+        ZP = $02
 
 
 
@@ -69,8 +69,8 @@ start
         ldx #>irq_nope
         sta $fffa
         stx $fffb
-        sta $fffc
-        stx $fffd
+;        sta $fffc
+;        stx $fffd
         ldy #RASTER
         sty $d012
         lda #$1b
@@ -81,14 +81,15 @@ start
         inx
         stx $d01a
         inc $d019
-        lda #$0c
-        ldx #$0b
-        sta $d020
-        stx $d021
+;        lda #$0c
+;        ldx #$0b
+;        sta $d020
+;        stx $d021
 
 ;        lda #$47
 ;        sta delay + 3
 
+        jsr scroll_sprites_clear
         jsr sprites_setup
 
 ;.if SID_ENABLE
@@ -96,7 +97,6 @@ start
         jsr SID_INIT
 ;.fi
         cli
-        jmp *
         ; Le barre d'espacement
 -       lda $dc01
         and #$10
@@ -104,7 +104,7 @@ start
         sei
         lda #$37
         sta $01
-        ;jsr swap_sid
+        jsr swap_sid
         jmp $fce2
 irq0
         pha
@@ -267,13 +267,24 @@ logo1_lo ldy #$0a
         jsr sprites_set_ypos
         lda #$d5
         sta $d018
-        ;ldx #(SCROLL_SPRITES /64)
-        ldx #$3a00/64
-.for i = 0, i < 7, i += 1
-        stx POINTERS1 + i
+
+        ldx #(SCROLL_SPRITES_0 / 64)
+        stx POINTERS1 + 0
         inx
-.next
+        stx POINTERS1 + 1
+        inx
+        stx POINTERS1 + 2
+        inx
+        stx POINTERS1 + 3
+        inx
+        stx POINTERS1 + 4
+        inx
+        stx POINTERS1 + 5
+        ldx #(SCROLL_SPRITES_1 / 64)
+        stx POINTERS1 + 6
+        inx
         stx POINTERS1 + 7
+
 scroll_color
         lda #0
 .for c = 0, c < 8, c += 1
@@ -642,9 +653,9 @@ do_logo_0_wipe .proc
         ldy #$00
 
 
-        logo_index = ZP_TMP
-        code_ptrs = ZP_TMP + 1 ; 2 bytes
-        col_index = ZP_TMP + 4
+        logo_index = ZP
+        code_ptrs = ZP + 1 ; 2 bytes
+        col_index = ZP + 4
 
 delay   lda #3
         beq +
@@ -990,8 +1001,8 @@ font    lda $fce2,x
         lda #$01
 +
 eor #1
-        ora SCROLL_SPRITES + $01c2 + 12,y
-        sta SCROLL_SPRITES + $01c2 +12 ,y
+        ora SCROLL_SPRITES_1 + $42 + 12,y
+        sta SCROLL_SPRITES_1 + $42 + 12,y
         iny
         iny
         iny
@@ -1010,37 +1021,37 @@ scroller_rol .proc
         ldx #12
 -
         clc
-        rol SCROLL_SPRITES + $1c2,x
-        rol SCROLL_SPRITES + $1c1,x
-        rol SCROLL_SPRITES + $1c0,x
+        rol SCROLL_SPRITES_1 + $42,x
+        rol SCROLL_SPRITES_1 + $41,x
+        rol SCROLL_SPRITES_1 + $40,x
 
-        rol SCROLL_SPRITES + $182,x
-        rol SCROLL_SPRITES + $181,x
-        rol SCROLL_SPRITES + $180,x
+        rol SCROLL_SPRITES_1 + $02,x
+        rol SCROLL_SPRITES_1 + $01,x
+        rol SCROLL_SPRITES_1 + $00,x
 
-        rol SCROLL_SPRITES + $142,x
-        rol SCROLL_SPRITES + $141,x
-        rol SCROLL_SPRITES + $140,x
+        rol SCROLL_SPRITES_0 + $142,x
+        rol SCROLL_SPRITES_0 + $141,x
+        rol SCROLL_SPRITES_0 + $140,x
 
-        rol SCROLL_SPRITES + $102,x
-        rol SCROLL_SPRITES + $101,x
-        rol SCROLL_SPRITES + $100,x
+        rol SCROLL_SPRITES_0 + $102,x
+        rol SCROLL_SPRITES_0 + $101,x
+        rol SCROLL_SPRITES_0 + $100,x
 
-        rol SCROLL_SPRITES + $0c2,x
-        rol SCROLL_SPRITES + $0c1,x
-        rol SCROLL_SPRITES + $0c0,x
+        rol SCROLL_SPRITES_0 + $c2,x
+        rol SCROLL_SPRITES_0 + $c1,x
+        rol SCROLL_SPRITES_0 + $c0,x
 
-        rol SCROLL_SPRITES + $082,x
-        rol SCROLL_SPRITES + $081,x
-        rol SCROLL_SPRITES + $080,x
+        rol SCROLL_SPRITES_0 + $82,x
+        rol SCROLL_SPRITES_0 + $81,x
+        rol SCROLL_SPRITES_0 + $80,x
 
-        rol SCROLL_SPRITES + $042,x
-        rol SCROLL_SPRITES + $041,x
-        rol SCROLL_SPRITES + $040,x
+        rol SCROLL_SPRITES_0 + $42,x
+        rol SCROLL_SPRITES_0 + $41,x
+        rol SCROLL_SPRITES_0 + $40,x
 
-        rol SCROLL_SPRITES + $002,x
-        rol SCROLL_SPRITES + $001,x
-        rol SCROLL_SPRITES + $000,x
+        rol SCROLL_SPRITES_0 + $02,x
+        rol SCROLL_SPRITES_0 + $01,x
+        rol SCROLL_SPRITES_0 + $00,x
 
         inx
         inx
@@ -1050,6 +1061,18 @@ scroller_rol .proc
         rts
 .pend
 
+scroll_sprites_clear .proc
+        ldx #0
+        lda #$ff
+-       sta @wSCROLL_SPRITES_0,x
+        inx
+        bne -
+-       sta @wSCROLL_SPRITES_0 + $0100,x
+        sta @wSCROLL_SPRITES_1,x
+        inx
+        bpl-
+        rts
+.pend
 
 scroll_text
         .enc "screen"
@@ -1092,14 +1115,10 @@ swap_sid .proc
         rts
 .pend
 
-        * = SCROLL_SPRITES
-        .fill 512, $ff
 
 ; FOCUS logo
         * = SPRITES_LOAD        ; $3c00-$3fff
 .binary "sprites-stretched.bin"
-
-
 
 
 
