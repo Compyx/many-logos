@@ -636,8 +636,8 @@ open_border_2
 
         rts
 
-
-        SIN_WIDTH =28 * 8
+        ; Sinus 'width' of the logo swing
+        SIN_WIDTH = 28 * 8
 
 sinus
         .byte SIN_WIDTH / 2 + (SIN_WIDTH / 2.0 - 0.5) * sin(range(128) * rad(360.0/128))
@@ -647,6 +647,15 @@ color_ptrs
         .word logo1_bg + 1, logo1_lo + 1, logo1_mid + 1, logo1_hi + 1
         .word logo2_bg + 1, logo2_lo + 1, logo2_mid + 1, logo2_hi + 1
         .word logo3_bg + 1, logo3_lo + 1, logo3_mid + 1, logo3_hi + 1
+
+        ; move to zp (probably not possible anymore)
+spr_xpos_table  .fill NUM_LOGOS * $09, 0
+
+spr_xpos_add    .byte $00, $18, $30, $48, $60, $78, $90, $a8, $c0
+spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80, $00
+wipe_index      .byte 0, (wipes_1 - wipes) / 2
+                .byte (wipes_2 - wipes) / 2, (wipes_3 - wipes) / 2
+
 
 
 do_logo_0_wipe .proc
@@ -747,14 +756,6 @@ next
 ; return: Y = $d010
 
 
-
-; move to zp
-spr_xpos_table  .fill NUM_LOGOS * $09, 0
-
-
-spr_xpos_add    .byte $00, $18, $30, $48, $60, $78, $90, $a8, $c0
-spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80, $00
-wipe_index      .byte 0, (wipes_1 - wipes) / 2, (wipes_2 - wipes) / 2, (wipes_3 - wipes)/2
 
 colors
         .byte 0, 0
@@ -1000,7 +1001,7 @@ font    lda $fce2,x
         beq +
         lda #$01
 +
-eor #1
+        eor #1
         ora SCROLL_SPRITES_1 + $42 + 12,y
         sta SCROLL_SPRITES_1 + $42 + 12,y
         iny
@@ -1060,7 +1061,6 @@ scroller_rol .proc
         bne -
         rts
 .pend
-
 scroll_sprites_clear .proc
         ldx #0
         lda #$ff
@@ -1073,6 +1073,7 @@ scroll_sprites_clear .proc
         bpl-
         rts
 .pend
+
 
 scroll_text
         .enc "screen"
@@ -1090,6 +1091,12 @@ scroll_text
 
        SID_TEMP_END = *
 
+
+; Swap SID from between its temporary location and its proper location
+;
+; Called when starting this intro and called when exiting to adhere to the
+; Intro Creation Compo 2019, 4KB category.
+;
 swap_sid .proc
         ldx #0
 -
@@ -1114,6 +1121,7 @@ swap_sid .proc
         bne -
         rts
 .pend
+
 
 
 ; FOCUS logo
