@@ -43,23 +43,16 @@
 
         * = $3000
 start
-
-        jsr swap_sid
- 
-        cld
         sei
+        cld
         ldx #$ff
         txs
+
 ;       stx $d015
   ;      stx $d01d
         lda #$7f
         sta $dc0d
         sta $dd0d
-        bit $dc0d
-        bit $dd0d
-        lda #$35
-        sta $01
-
  
         lda #<irq0
         ldx #>irq0
@@ -69,13 +62,19 @@ start
         ldx #>irq_nope
         sta $fffa
         stx $fffb
-;        sta $fffc
-;        stx $fffd
+        sta $fffc
+        stx $fffd
+        lda #$35
+        sta $01
+
+
         ldy #RASTER
         sty $d012
         lda #$1b
         sta $d011
-
+        jsr swap_sid
+        jsr scroll_sprites_clear
+ 
         ldx #0
         stx $3fff
         inx
@@ -89,7 +88,6 @@ start
 ;        lda #$47
 ;        sta delay + 3
 
-        jsr scroll_sprites_clear
         jsr sprites_setup
 
 ;.if SID_ENABLE
@@ -159,11 +157,9 @@ irq0a
         ;               ; ----
         ;               ; 59
 
-        ldx #$09
+        ldx #$0a
 -       dex
         bne -
-        nop
-        nop
 
         ; 1* JSR        = 6
         ; 1 * lda #$00  = 2
@@ -177,7 +173,7 @@ irq0a
                         ; 2 + 3 for each loop except the last, that's -1
 -       dex
         bne -
-bit $ea
+        bit $ea
 
        ; jsr delay       ; $56
 logo0_bg
@@ -206,22 +202,24 @@ logo0_lo  ldy #$0c
         stx $d021       ; 4
         stx $d020       ; 4
 
+        nop
 
-         nop
-logo1_ypos        lda #$46
+logo1_ypos
+        lda #$46
         jsr sprites_set_ypos
         ldx #9
         jsr sprites_set_xpos
         ldx #$08
 -       dex
         bne -
-logo1_bg        lda #$02
+logo1_bg
+        lda #$02
         sta $d020
         sta $d021
         nop
         bit $ea
  
-logo1_mid    lda #$07
+logo1_mid lda #$07
 logo1_hi ldx #$01
 logo1_lo ldy #$0a
         jsr sprites_set_colors
