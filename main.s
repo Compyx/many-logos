@@ -43,11 +43,8 @@
 
         * = $3000
 start
-        sei
+        ;sei
         cld
-        ldx #$ff
-        txs
-
 ;       stx $d015
   ;      stx $d01d
         lda #$7f
@@ -64,9 +61,11 @@ start
         stx $fffb
         sta $fffc
         stx $fffd
+
         lda #$35
         sta $01
-
+        ldx #$ff
+        txs
 
         ldy #RASTER
         sty $d012
@@ -75,11 +74,11 @@ start
         jsr swap_sid
         jsr scroll_sprites_clear
  
+        inc $d019
         ldx #0
         stx $3fff
         inx
         stx $d01a
-        inc $d019
 ;        lda #$0c
 ;        ldx #$0b
 ;        sta $d020
@@ -94,7 +93,7 @@ start
         lda #0
         jsr SID_INIT
 ;.fi
-        cli
+;        cli
         ; Le barre d'espacement
 -       lda $dc01
         and #$10
