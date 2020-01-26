@@ -48,6 +48,7 @@
 .fi
 
         * = $3000
+.dsection start
 start
         ;sei
         cld
@@ -109,6 +110,8 @@ start
         sta $01
         jsr swap_sid
         jmp $fce2
+
+.dsection irq0
 irq0
         pha
         txa
@@ -128,6 +131,7 @@ irq0
         tsx
         cli
         .fill 11, $ea   ; reduce?
+.dsection irq01
 irq0a
         txs
         ldx #8
@@ -201,7 +205,7 @@ logo0_lo  ldy #$0c
 
         lda #$ff
         sta $d017
-
+.dsection logo_0
         jsr open_border_1
         ldx #$0b
 -       dex
@@ -269,6 +273,7 @@ logo1_lo ldy #$0a
         lda #$c0        ; 2
         sta $d018       ; 4
 
+.dsection logo_1
         jsr open_border_1
         ldx #$0a
 -       dex
@@ -289,7 +294,7 @@ logo1_lo ldy #$0a
         lda #$ff
         sta $d01d
 
-        lda logo1_ypos + 1
+        lda logo1_ypos + 2
         clc
         adc #$30
         jsr sprites_set_ypos
@@ -338,7 +343,7 @@ scroll_color
         sta $d03f
         sta $d03f
 
-
+.dsection rol_scroll
         jsr open_border_2
 
         ldx #$03
@@ -396,6 +401,7 @@ logo2_lo        ldy #$05
         ldx #27
 -       dex
         bne -
+.dsection logo_2
         jsr open_border_1
         ldx #03
 -       dex
@@ -441,6 +447,7 @@ logo3_lo        ldy #$0e
         bit $ea
 
 ;        jsr delay
+.dsection logo_3
         jsr open_border_1
         ldx #$0b
 -       dex
