@@ -371,7 +371,7 @@ logo2_lo        ldy #$05
         bne -
         stx $d020
         stx $d021
-        lda #$92 + 50
+        lda #$92 + 51
         jsr sprites_set_ypos
  
 
@@ -400,20 +400,23 @@ logo3_lo        ldy #$0e
         ;
         ; +                     74
 
+        lda #$c0
+        sta $d018
+        nop
+        nop
         ldx #15
 -       dex
         bne -
+        bit $ea
 
 ;        jsr delay
         jsr open_border_1
-        ldx #$05
+        ldx #$0b
 -       dex
         bne -
         ;lda #0          ; 2
         stx $d021       ; 4
         stx $d020       ; 4
-
-
 
 
 ;        jsr update_delay
@@ -597,10 +600,12 @@ open_border_1
         ldx #42
 -       lda colors,x    ; 4
         dec $d016       ; 6
+;       sta $d021
         sty $d016       ; 4
         cmp ($c1,x)     ; 6
         cmp ($c1,x)     ; 6
-        nop
+;       nop
+       nop
         lda $d018
         eor #$10
         sta $d018
@@ -616,7 +621,7 @@ open_border_1
 open_border_2
         ldy #8
         ldx #0
--       lda colors,x    ; 4
+-       lda scroll_colors,x    ; 4
         dec $d016       ; 6
         sta $d021       ; 4
         sty $d016       ; 4
@@ -755,10 +760,18 @@ next
 
 
 colors
-        .byte 0, 0
-        .byte $00, $00, $06, $0e, $03, $01, $09, $08
-        .byte $0a, $07, $01
+        .byte $00, $06, $00, $06, $04, $00, $06, $04
+        .byte $0e, $00, $06, $04, $0e, $03, $00, $06
+        .byte $04, $0e, $03, $01, $00, $06, $04, $0e
+        .byte $03, $01, $07, $0f, $0a, $08, $09, $00
+        .byte $01, $07, $0f, $0a, $08, $09, $00, $07
+        .byte $0f, $0a, $08, $09, $00, $0a, $08, $09
+        .byte $00, $08, $09, $00, $00, $09, $00, $00
+
+scroll_colors
+        .byte 0, 0, 0, 0, 0, $06, $04, $0e, $0F, $07, 1, 1
         .fill 16, 0
+
 
 wipes
         .byte $00, $00
