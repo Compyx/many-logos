@@ -159,6 +159,9 @@ irq0a
         ldx #$0a
 -       dex
         bne -
+        lda #$1         ; 2
+        sta $d020       ; 4
+        sta $d021       ; 4 == 10
 
         ; 1* JSR        = 6
         ; 1 * lda #$00  = 2
@@ -168,7 +171,7 @@ irq0a
         ; 1 * RTS       = 6
         ; -------------------+
         ;               = 62
-        ldx #$0c        ; 2
+        ldx #$0a        ; 2
                         ; 2 + 3 for each loop except the last, that's -1
 -       dex
         bne -
@@ -194,30 +197,43 @@ logo0_lo  ldy #$0c
         sta $d017
 
         jsr open_border_1
-        ldx #$05
+        ldx #$0b
 -       dex
         bne -
-        ;lda #0          ; 2
-        stx $d021       ; 4
-        stx $d020       ; 4
-
-        nop
+        lda #1          ; 2
+        sta $d021       ; 4
+        sta $d020       ; 4
+        ldx #$0a
+-       dex
+        bne -
+        stx $d020
+        stx $d021
 
 logo1_ypos
         lda #$46
         jsr sprites_set_ypos
         ldx #9
         jsr sprites_set_xpos
-        ldx #$08
+        ldx #$07
 -       dex
         bne -
+
+        lda #$01
+        sta $d020
+        sta $d021
+        ldx #$08
+-       dex
+        bpl -
+        nop
+        bit $ea
+ 
 logo1_bg
         lda #$02
         sta $d020
         sta $d021
         nop
         bit $ea
- 
+
 logo1_mid lda #$07
 logo1_hi ldx #$01
 logo1_lo ldy #$0a
@@ -237,12 +253,15 @@ logo1_lo ldy #$0a
         ;
         ; total                 ; 95
 
-        ldx #20
+        ldx #17
 -       dex     ; 2
         bne -   ; 3 /2
-        nop
+        bit $ea
 ;nop
 ;        bit $ea
+        
+        lda #$c0        ; 2
+        sta $d018       ; 4
 
 
         jsr open_border_1
@@ -597,7 +616,7 @@ do_sinus_logo_3
 
 open_border_1
         ldy #8
-        ldx #42
+        ldx #40
 -       lda colors,x    ; 4
         dec $d016       ; 6
 ;       sta $d021
