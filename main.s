@@ -9,6 +9,12 @@
 ;        SID_INIT = SID_LOAD + 0
 ;        SID_PLAY = SID_LOAD + 3
 
+
+        ; Set to 1 to add rasterbars behind the logos to debug sideborder
+        ; opening code.
+        DEBUG_BORDER = 0
+
+
         ; use zp $20-$3x
 
         SID_LOAD = $0ffc
@@ -263,9 +269,15 @@ logo1_lo ldy #$0a
         lda #$c0        ; 2
         sta $d018       ; 4
 
-
         jsr open_border_1
-        ldx #$03
+        ldx #$0a
+-       dex
+        bne -
+        bit $ea
+        lda #1
+        sta $d020
+        sta $d021
+        ldx #$0c
 -       dex
         bne -
         stx $d020
@@ -619,12 +631,17 @@ open_border_1
         ldx #40
 -       lda colors,x    ; 4
         dec $d016       ; 6
-;       sta $d021
+.if DEBUG_BORDER
+        sta $d021
+.endif
         sty $d016       ; 4
         cmp ($c1,x)     ; 6
+.if DEBUG_BORDER
+        nop
+.else
         cmp ($c1,x)     ; 6
-;       nop
-       nop
+.endif
+        nop
         lda $d018
         eor #$10
         sta $d018
