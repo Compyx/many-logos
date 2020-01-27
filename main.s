@@ -358,26 +358,23 @@ logo1_lo ldy #$0a
         bpl -
 
         jsr open_border_2
+        nop
+        nop
+        nop
         lda #1
         sta $d020
         sta $d021
 
-        ldx #$03
+        ldx #$0b
 -       dex
         bne -
-
-        ldx #(SPRITES_LOAD + $0200) / 64
-.for i = 0, i < 7, i += 1
-        stx POINTERS1 + i
-        inx
-.next
-        stx POINTERS1 + 7
-
-        ldx #3
-        stx $d03f
+        stx $d020
+        stx $d021
+logo2_bg lda #$09
+        sta $d020
+        sta $d021
+ 
         ldx #0
-;        stx $d021
-
         stx $d01d
         dex
         stx $d017
@@ -385,13 +382,16 @@ logo1_lo ldy #$0a
         lda #$c0
         sta $d018
 
-logo2_bg lda #$09
-        sta $d020
-        sta $d021
+       ldx #(SPRITES_LOAD + $0200) / 64
+.for i = 0, i < 7, i += 1
+        stx POINTERS1 + i
+        inx
+.next
+        stx POINTERS1 + 7
 
-        lda #$93
+
+        lda #$92
         jsr sprites_set_ypos
-        nop
         ldx #9*2  ; logo index
         jsr sprites_set_xpos
 logo2_mid       lda #$03
@@ -414,9 +414,6 @@ logo2_lo        ldy #$05
         ; x * 5
         ; 4
 
-        ldx #27
--       dex
-        bne -
 .dsection logo_2
         jsr open_border_1
         ldx #03
