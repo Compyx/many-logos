@@ -358,6 +358,9 @@ logo1_lo ldy #$0a
         bpl -
 
         jsr open_border_2
+        lda #1
+        sta $d020
+        sta $d021
 
         ldx #$03
 -       dex
@@ -687,7 +690,7 @@ open_border_2
         cmp ($c1,x)
         bit $ea         ; 3
         inx
-        cpx #23        ;2
+        cpx #21        ;2
         bne -           ; 3 when brach, 2 when not
                         ;+ ----
                         ; 18 + 20 + 5 + 2 = 
@@ -825,7 +828,7 @@ colors
         .byte $00, $08, $09, $00, $00, $09, $00, $00
 
 scroll_colors
-        .byte 0, 0, 0, $06, $04, $0e, $0f, $07, $0d, 1,1 
+        .byte 0, 0, 6, $06, $04, $0e, $0f, $07, $0d, 1,1 
         .fill 16, 0
 
 
