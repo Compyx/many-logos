@@ -416,16 +416,17 @@ logo2_lo        ldy #$05
 
 .dsection logo_2
         jsr open_border_1
-        ldx #03
+        ldx #$0a
 -       dex
         bne -
-        stx $d020
-        stx $d021
+        lda #$01
+        sta $d020
+        sta $d021
         lda #$92 + 51
         jsr sprites_set_ypos
  
 
-        ldx #03
+        ldx #01
 -       dex
         bne -
 logo3_bg lda #$06
