@@ -294,11 +294,15 @@ logo1_lo ldy #$0a
         lda #$ff
         sta $d01d
 
-        lda logo1_ypos + 2
+        lda $d012
+        sta $8000
+
+        lda logo1_ypos + 1      ; #$46
         clc
-        adc #$30
+        adc #$31
+
         jsr sprites_set_ypos
-        lda #$d5
+        lda #$d0
         sta $d018
 
         ldx #(SCROLL_SPRITES_0 / 64)
@@ -318,7 +322,7 @@ logo1_lo ldy #$0a
         inx
         stx POINTERS1 + 7
 
-scroll_color
+;        lda #7
         lda #0
 .for c = 0, c < 8, c += 1
         sta $d027 + c
@@ -336,14 +340,23 @@ scroll_color
         ; ----------------- +
         ;               61
 
-        ldx #12
+        ldx #2
 -       dex
         bne -
-        lda #3
-        sta $d03f
-        sta $d03f
+        lda #01
+        sta $d020
+        sta $d021
+        ldx #$0b
+-       dex
+        bne -
+        stx $d020
+        stx $d021
 
 .dsection rol_scroll
+        ldx #3
+-       dex
+        bpl -
+
         jsr open_border_2
 
         ldx #$03
@@ -812,7 +825,7 @@ colors
         .byte $00, $08, $09, $00, $00, $09, $00, $00
 
 scroll_colors
-        .byte 0, 0, 0, 0, 0, $06, $04, $0e, $0F, $07, 1, 1
+        .byte 0, 0, 0, $06, $04, $0e, $0f, $07, $0d, 1,1 
         .fill 16, 0
 
 
@@ -1039,7 +1052,6 @@ index   ldy #0
         lda #$d0
         adc #0
         sta font + 2
-
         lda #$33
         sta $01
 
@@ -1127,7 +1139,7 @@ scroll_sprites_clear .proc
         rts
 .pend
 
-
+.dsection scroll_text
 scroll_text
         .enc "screen"
         .text "abcdefghiklmnopqrstxz !@#$%&*() hello world! ... focus rules!"
