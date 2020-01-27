@@ -422,7 +422,7 @@ logo2_lo        ldy #$05
         lda #$01
         sta $d020
         sta $d021
-        lda #$92 + 51
+        lda #$92 + 49
         jsr sprites_set_ypos
  
 
