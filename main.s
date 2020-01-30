@@ -11,8 +11,8 @@
 
 
         ; Set to 1 to add rasterbars behind the logos to debug sideborder
-        ; opening code.
-        DEBUG_BORDER = 1
+        ; opening code
+        DEBUG_BORDER = 0
 
 
         ; use zp $20-$3x
@@ -678,14 +678,12 @@ open_border_1
        sty $d016       ; 4
 .if DEBUG_BORDER
         sta $d021
-.endif
- 
-        cmp ($c1,x)     ; 6
-.if DEBUG_BORDER
         nop
 .else
-        cmp ($c1,x)     ; 6
+        sta $d03f
+        nop
 .endif
+        cmp ($c1,x)     ; 6
         nop
         lda $d018
         eor #$10
