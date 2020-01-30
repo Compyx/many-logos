@@ -96,10 +96,8 @@ start
 
         jsr sprites_setup
 
-;.if SID_ENABLE
         lda #0
         jsr SID_INIT
-;.fi
 ;        cli
         ; Le barre d'espacement
 -       lda $dc01
@@ -126,7 +124,6 @@ irq0
         sty $d012
         sta $fffe
         stx $ffff
-        nop
         inc $d019
         tsx
         cli
@@ -487,12 +484,20 @@ logo3_bg  lda #$00
         ;
         ; DEC $d016
 
-        ldx #$03
+        ldx #$0a
 -       dex
         bne -
-        stx $d021       ; 4
-        stx $d020       ; 4
+        lda #1
+        sta $d021       ; 4
+        sta $d020       ; 4
+;        ldx #$0c
+;-       dex
+;        bne -
+;        stx $d020
+;        stx $d021
 
+;        lda $d012
+;        sta $03ff
 
 ;        jsr update_delay
 
@@ -500,18 +505,16 @@ logo3_bg  lda #$00
  ;       sta $d020
  ;       sta $d021
 
-;.if SID_ENABLE
-;        dec $d020
-;        jsr SID_PLAY
-;        dec $d020
+        dec $d020
+        jsr SID_PLAY
         lda #0
-        sta $d020
-;.fi
+        dec $d020
         lda #<irq1
         ldx #>irq1
         ldy #$f9
         jmp do_irq
 
+.dsection irq1
 irq1
         pha
         txa
@@ -521,6 +524,7 @@ irq1
 
         lda #$03
         sta $d011
+        sta $d020
         lda #0
         sta $d017
         ldx #$30
@@ -553,6 +557,7 @@ irq1
         ldy #RASTER
         lda #<irq0
         ldx #>irq0
+.dsection do_irq
 do_irq
         sty $d012
         sta $fffe
@@ -566,7 +571,7 @@ do_irq
 irq_nope rti
 
 
-
+.dsection sprites_setup
 sprites_setup
 
         lda #$ff
@@ -626,48 +631,11 @@ set_scroll_xpos .proc
         rts
 .pend
 
-do_sinus_logo_0
-        lda #0
-        and #$7f
-        tay
 
-        lda sinus,y
-        ldx #0
-        jsr calc_sprites_xpos
-        inc do_sinus_logo_0 + 1
-        rts
 
-do_sinus_logo_1
-        lda #$20
-        and #$7f
-        tay
-        lda sinus,y
-        ldx #9
-        jsr calc_sprites_xpos
-        inc do_sinus_logo_1 + 1
-        rts
+.cerror * > $33f8, "Overlapping sprite pointers"
 
-do_sinus_logo_2
-        lda #$40
-        and #$7f
-        tay
-        lda sinus,y
-        ldx #18
-        jsr calc_sprites_xpos
-        inc do_sinus_logo_2 + 1
-        rts
-
-do_sinus_logo_3
-        lda #$60
-        and #$7f
-        tay
-        lda sinus,y
-        ldx #27
-        jsr calc_sprites_xpos
-        inc do_sinus_logo_3 + 1
-        rts
-
-        .align 256
+        * = $3400
 
 
 open_border_1
@@ -737,6 +705,47 @@ spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80, $00
 wipe_index      .byte 0, (wipes_1 - wipes) / 2
                 .byte (wipes_2 - wipes) / 2, (wipes_3 - wipes) / 2
 
+                
+do_sinus_logo_0
+        lda #0
+        and #$7f
+        tay
+
+        lda sinus,y
+        ldx #0
+        jsr calc_sprites_xpos
+        inc do_sinus_logo_0 + 1
+        rts
+
+do_sinus_logo_1
+        lda #$20
+        and #$7f
+        tay
+        lda sinus,y
+        ldx #9
+        jsr calc_sprites_xpos
+        inc do_sinus_logo_1 + 1
+        rts
+
+do_sinus_logo_2
+        lda #$40
+        and #$7f
+        tay
+        lda sinus,y
+        ldx #18
+        jsr calc_sprites_xpos
+        inc do_sinus_logo_2 + 1
+        rts
+
+do_sinus_logo_3
+        lda #$60
+        and #$7f
+        tay
+        lda sinus,y
+        ldx #27
+        jsr calc_sprites_xpos
+        inc do_sinus_logo_3 + 1
+        rts
 
 
 do_logo_0_wipe .proc
@@ -838,108 +847,10 @@ next
 
 
 
-colors
-        .byte $00, $06, $00, $06, $04, $00, $06, $04
-        .byte $0e, $00, $06, $04, $0e, $03, $00, $06
-        .byte $04, $0e, $03, $01, $00, $06, $04, $0e
-        .byte $03, $01, $07, $0f, $0a, $08, $09, $00
-        .byte $01, $07, $0f, $0a, $08, $09, $00, $07
-        .byte $0f, $0a, $08, $09, $00, $0a, $08, $09
-        .byte $00, $08, $09, $00, $00, $09, $00, $00
-
-scroll_colors
-        .byte 0, 0, 6, $06, $04, $0e, $0f, $07, $0d, 1,1 
-        .fill 16, 0
 
 
-wipes
-        .byte $00, $00
-        ; grey
-        .byte $00, $0b
-        .byte $00, $bc
-        .byte $0b, $cf
-        .byte $bc, $f1
-        .byte $bc, $f1
-        .byte $bc, $f1
-        .byte $bc, $f1
-        .byte $bc, $f1
-        .byte $bc, $f1
-        .byte $bc, $f1
-        .byte $bc, $f1
-        .byte $bc, $f1
-        .byte $bc, $f1
-        .byte $bc, $f1
-        .byte $0b, $cf
-        .byte $00, $bc
-        .byte $00, $0b
-wipes_1
-        .byte $00, $00
 
 
-        ; red
-        .byte $00, $02
-        .byte $00, $2a
-        .byte $02, $a7
-        .byte $2a, $71
-        .byte $2a, $71
-        .byte $2a, $71
-        .byte $2a, $71
-        .byte $2a, $71
-        .byte $2a, $71
-        .byte $2a, $71
-        .byte $2a, $71
-        .byte $2a, $71
-        .byte $2a, $71
-        .byte $2a, $71
-        .byte $2a, $71
-        .byte $02, $a7
-        .byte $00, $2a
-        .byte $00, $02
-        .byte $00, $00
-wipes_2
-
-        ; green
-        .byte $00, $09
-        .byte $00, $98
-        .byte $09, $85
-        .byte $98, $5d
-        .byte $95, $d1
-        .byte $95, $d1
-        .byte $95, $d1
-        .byte $95, $d1
-        .byte $95, $d1
-        .byte $95, $d1
-        .byte $95, $d1
-        .byte $95, $d1
-        .byte $95, $d1
-        .byte $95, $d1
-        .byte $95, $d1
-        .byte $98, $5d
-        .byte $09, $85
-        .byte $00, $98
-        .byte $00, $09
-        .byte $00, $00
-wipes_3
-        ; blue
-        .byte $00, $06
-        .byte $00, $64
-        .byte $06, $4e
-        .byte $64, $e3
-        .byte $4e, $31
-        .byte $6e, $31
-        .byte $6e, $31
-        .byte $6e, $31
-        .byte $6e, $31
-        .byte $6e, $31
-        .byte $6e, $31
-        .byte $6e, $31
-        .byte $6e, $31
-        .byte $6e, $31
-        .byte $06, $e3
-        .byte $00, $6e
-        .byte $00, $06
-        .byte $00, $00
-wipes_end
 
 
 .if 0
@@ -1051,6 +962,51 @@ calc_sprites_xpos .proc
 ;masks   .byte $80, $40, $20, $10, $08, $04, $02, $01
 masks   .byte $01, $02, $04, $08, $10, $20, $40, $80
 
+
+scroller_rol .proc
+
+        ldx #12
+-
+        clc
+        rol SCROLL_SPRITES_1 + $42,x
+        rol SCROLL_SPRITES_1 + $41,x
+        rol SCROLL_SPRITES_1 + $40,x
+
+        rol SCROLL_SPRITES_1 + $02,x
+        rol SCROLL_SPRITES_1 + $01,x
+        rol SCROLL_SPRITES_1 + $00,x
+
+        rol SCROLL_SPRITES_0 + $142,x
+        rol SCROLL_SPRITES_0 + $141,x
+        rol SCROLL_SPRITES_0 + $140,x
+
+        rol SCROLL_SPRITES_0 + $102,x
+        rol SCROLL_SPRITES_0 + $101,x
+        rol SCROLL_SPRITES_0 + $100,x
+
+        rol SCROLL_SPRITES_0 + $c2,x
+        rol SCROLL_SPRITES_0 + $c1,x
+        rol SCROLL_SPRITES_0 + $c0,x
+
+        rol SCROLL_SPRITES_0 + $82,x
+        rol SCROLL_SPRITES_0 + $81,x
+        rol SCROLL_SPRITES_0 + $80,x
+
+        rol SCROLL_SPRITES_0 + $42,x
+        rol SCROLL_SPRITES_0 + $41,x
+        rol SCROLL_SPRITES_0 + $40,x
+
+        rol SCROLL_SPRITES_0 + $02,x
+        rol SCROLL_SPRITES_0 + $01,x
+        rol SCROLL_SPRITES_0 + $00,x
+
+        inx
+        inx
+        inx
+        cpx #8*3 + 12
+        bne -
+        rts
+.pend
 scroller_update .proc
 
 xpos    ldx #7
@@ -1105,50 +1061,6 @@ font    lda $fce2,x
         rts
 .pend
 
-scroller_rol .proc
-
-        ldx #12
--
-        clc
-        rol SCROLL_SPRITES_1 + $42,x
-        rol SCROLL_SPRITES_1 + $41,x
-        rol SCROLL_SPRITES_1 + $40,x
-
-        rol SCROLL_SPRITES_1 + $02,x
-        rol SCROLL_SPRITES_1 + $01,x
-        rol SCROLL_SPRITES_1 + $00,x
-
-        rol SCROLL_SPRITES_0 + $142,x
-        rol SCROLL_SPRITES_0 + $141,x
-        rol SCROLL_SPRITES_0 + $140,x
-
-        rol SCROLL_SPRITES_0 + $102,x
-        rol SCROLL_SPRITES_0 + $101,x
-        rol SCROLL_SPRITES_0 + $100,x
-
-        rol SCROLL_SPRITES_0 + $c2,x
-        rol SCROLL_SPRITES_0 + $c1,x
-        rol SCROLL_SPRITES_0 + $c0,x
-
-        rol SCROLL_SPRITES_0 + $82,x
-        rol SCROLL_SPRITES_0 + $81,x
-        rol SCROLL_SPRITES_0 + $80,x
-
-        rol SCROLL_SPRITES_0 + $42,x
-        rol SCROLL_SPRITES_0 + $41,x
-        rol SCROLL_SPRITES_0 + $40,x
-
-        rol SCROLL_SPRITES_0 + $02,x
-        rol SCROLL_SPRITES_0 + $01,x
-        rol SCROLL_SPRITES_0 + $00,x
-
-        inx
-        inx
-        inx
-        cpx #8*3 + 12
-        bne -
-        rts
-.pend
 scroll_sprites_clear .proc
         ldx #0
         lda #$ff
@@ -1162,11 +1074,16 @@ scroll_sprites_clear .proc
         rts
 .pend
 
+
+
+
 .dsection scroll_text
 scroll_text
         .enc "screen"
         .text "abcdefghiklmnopqrstxz !@#$%&*() hello world! ... focus rules!"
         .byte $ff
+
+.cerror * > $37f8, "Overlapping sprite pointers!"
 
 
 ; SID at temp place
@@ -1210,7 +1127,107 @@ swap_sid .proc
         rts
 .pend
 
+       * = $3b00
+wipes
+        .byte $00, $00
+        ; grey
+        .byte $00, $0b
+        .byte $00, $bc
+        .byte $0b, $cf
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $bc, $f1
+        .byte $0b, $cf
+        .byte $00, $bc
+        .byte $00, $0b
+wipes_1
+        .byte $00, $00
 
+
+        ; red
+        .byte $00, $02
+        .byte $00, $2a
+        .byte $02, $a7
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $2a, $71
+        .byte $02, $a7
+        .byte $00, $2a
+        .byte $00, $02
+        .byte $00, $00
+wipes_2
+
+        ; green
+        .byte $00, $09
+        .byte $00, $98
+        .byte $09, $85
+        .byte $98, $5d
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $95, $d1
+        .byte $98, $5d
+        .byte $09, $85
+        .byte $00, $98
+        .byte $00, $09
+        .byte $00, $00
+wipes_3
+        ; blue
+        .byte $00, $06
+        .byte $00, $64
+        .byte $06, $4e
+        .byte $64, $e3
+        .byte $4e, $31
+        .byte $6e, $31
+        .byte $6e, $31
+        .byte $6e, $31
+        .byte $6e, $31
+        .byte $6e, $31
+        .byte $6e, $31
+        .byte $6e, $31
+        .byte $6e, $31
+        .byte $6e, $31
+        .byte $06, $e3
+        .byte $00, $6e
+        .byte $00, $06
+        .byte $00, $00
+wipes_end
+colors
+        .byte $00, $06, $00, $06, $04, $00, $06, $04
+        .byte $0e, $00, $06, $04, $0e, $03, $00, $06
+        .byte $04, $0e, $03, $01, $00, $06, $04, $0e
+        .byte $03, $01, $07, $0f, $0a, $08, $09, $00
+        .byte $01, $07, $0f, $0a, $08, $09, $00, $07
+        .byte $0f, $0a, $08, $09, $00, $0a, $08, $09
+        .byte $00, $08, $09, $00, $00, $09, $00, $00
+
+scroll_colors
+        .byte 0, 0, 6, $06, $04, $0e, $0f, $07, $0d, 1,1 
+        .fill 16, 0
 
 ; FOCUS logo
         * = SPRITES_LOAD        ; $3c00-$3fff
