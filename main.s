@@ -26,14 +26,28 @@
         SCROLL_SPRITES_0 = $0040        ; $0040-$01bf -> 6 sprites
         SCROLL_SPRITES_1 = $3a00        ; $3a00-$3a7f -> 2 sprites
 
+        ; first set of sprite pointers used for the logo's and scroll
         POINTERS0 = $33f8
+        ; second set of sprite pointers used for the logo's and scroll
         POINTERS1 = $37f8
 
         ZP = $02
 
 
+        ; starting raster line
+        RASTER = $15
 
-        RASTER = $0d
+        ; offset to RASTER for the first logo's Y position
+        LOGO_0_OFFSET = $07
+        ; offset to RASTER for the second logo's Y position
+        LOGO_1_OFFSET = $39
+        ; offset to RASTER for scroll's Y position
+        SCROLL_OFFSET = $6a
+        ; offset to RASTER for the third logo's Y position
+        LOGO_2_OFFSET = $85
+        ; offset to RASTER for the fourth logo's Y position
+        LOGO_3_OFFSET = $b5
+
 
         NUM_LOGOS = 4
 
@@ -190,7 +204,8 @@ logo0_bg
         sta $d020
         sta $d021
         nop
-        lda #$14
+;        lda #$14
+        lda #RASTER + $07
         jsr sprites_set_ypos
         nop
         ldx #0  ; logo index
@@ -217,7 +232,8 @@ logo0_lo  ldy #$0c
         stx $d021
 
 logo1_ypos
-        lda #$46
+        ;        lda #$46
+        lda #RASTER + $39
         jsr sprites_set_ypos
         ldx #9
         jsr sprites_set_xpos
@@ -266,7 +282,7 @@ logo1_lo ldy #$0a
         bit $ea
 ;nop
 ;        bit $ea
-        
+
         lda #$c0        ; 2
         sta $d018       ; 4
 
@@ -296,10 +312,15 @@ logo1_lo ldy #$0a
         nop
         nop
 
-        lda logo1_ypos + 1      ; #$46
-        clc
-        adc #$31
+;        lda logo1_ypos + 1      ; #$46
+;        clc
+;        adc #$31
 
+        nop
+        nop
+        nop
+
+        lda #RASTER + $6a
         jsr sprites_set_ypos
         lda #$d0
         sta $d018
@@ -389,7 +410,7 @@ logo2_bg lda #$09
         stx POINTERS1 + 7
 
 
-        lda #$92
+        lda #RASTER + $85
         jsr sprites_set_ypos
         ldx #9*2  ; logo index
         jsr sprites_set_xpos
@@ -421,7 +442,8 @@ logo2_lo        ldy #$05
         lda #$01
         sta $d020
         sta $d021
-        lda #$92 + 48
+;        lda #$92 + 48
+        lda #RASTER + $b5
         jsr sprites_set_ypos
  
 
@@ -507,10 +529,6 @@ logo3_bg  lda #$00
  ;       sta $d020
  ;       sta $d021
 
-        ;dec $d020
-        jsr SID_PLAY
-        lda #0
-        ;dec $d020
         lda #<irq1
         ldx #>irq1
         ldy #$f9
@@ -526,7 +544,7 @@ irq1
 
         lda #$03
         sta $d011
-        ;sta $d020
+        sta $d020
         lda #0
         sta $d017
         ldx #$30
@@ -536,25 +554,23 @@ irq1
         sta $d018
         lda #$0b
         sta $d011
-        ;dec $d020
+        inc $d020
+        jsr SID_PLAY
+        inc $d020
         jsr sprites_setup
         jsr do_sinus_logo_0
         jsr do_sinus_logo_1
         jsr do_sinus_logo_2
         jsr do_sinus_logo_3
 
-         ;dec $d020
-        ;jsr do_logo_1_wipe
-
-       jsr scroller_rol
-       ;dec $d020
-       jsr scroller_update
-        ;dec $d020
+        inc $d020
+        jsr scroller_rol
+        inc $d020
+        jsr scroller_update
+        inc $d020
         jsr do_logo_0_wipe
-       ;inc $d020
-        ;inc $d020
-        ;inc $d020
-        ;inc $d020
+        lda #0
+        sta $d020
 
         ldy #RASTER
         lda #<irq0
@@ -635,7 +651,7 @@ set_scroll_xpos .proc
 
 
 
-.cerror * > $33f8, "Overlapping sprite pointers"
+.cerror * > POINTERS0, "Overlapping sprite pointers"
 
         * = $3400
 
@@ -703,11 +719,15 @@ color_ptrs
 spr_xpos_table  .fill NUM_LOGOS * $09, 0
 
 spr_xpos_add    .byte $00, $18, $30, $48, $60, $78, $90, $a8, $c0
-spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80, $00
-wipe_index      .byte 0, (wipes_1 - wipes) / 2
-                .byte (wipes_2 - wipes) / 2, (wipes_3 - wipes) / 2
 
-                
+spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80, $00
+
+wipe_index      .byte 0
+                .byte (wipes_1 - wipes) / 2
+                .byte (wipes_2 - wipes) / 2
+                .byte (wipes_3 - wipes) / 2
+
+
 do_sinus_logo_0
         lda #0
         and #$7f
@@ -789,8 +809,6 @@ loop
         cpx #8
         bne -
 
-
-
         ldx logo_index
         lda wipe_index,x
         asl
@@ -838,54 +856,6 @@ next
 
 
 
-
-
-; $00 = $00,$18,$30,$48,$60,$78,$90,$a8
-; $20 = $80
-; $38 = $c0
-; $50 = $e0
-; $68 = $f0
-; return: Y = $d010
-
-
-
-
-
-
-
-
-
-.if 0
-update_delay .proc
-        lda #7
-        beq +
-        dec update_delay + 1
-        rts
-+
-        lda #$07
-        sta update_delay + 1
-        lda $dc01
-        and #$02
-        beq +
-        rts
-+
-        lda delay + 3
-        sec
-        sbc #1
-        and #$7f
-        sta delay + 3
-        rts
-.pend
-
-;.align 256
-
-delay
-        lda #0
-        beq +
-+       .fill 128, $e0
-        bit $ea
-        rts
-.fi
 
 
 ; Set sprite YPOS quickly
@@ -1085,7 +1055,7 @@ scroll_text
         .text "abcdefghiklmnopqrstxz !@#$%&*() hello world! ... focus rules!"
         .byte $ff
 
-.cerror * > $37f8, "Overlapping sprite pointers!"
+.cerror * > POINTERS1, "Overlapping sprite pointers!"
 
 
 ; SID at temp place
@@ -1218,6 +1188,8 @@ wipes_3
         .byte $00, $06
         .byte $00, $00
 wipes_end
+
+
 colors
         .byte $00, $06, $00, $06, $04, $00, $06, $04
         .byte $0e, $00, $06, $04, $0e, $03, $00, $06
@@ -1227,17 +1199,14 @@ colors
         .byte $0f, $0a, $08, $09, $00, $0a, $08, $09
         .byte $00, $08, $09, $00, $00, $09, $00, $00
 
+
 scroll_colors
         .byte 0, 0, 6, $06, $04, $0e, $0f, $07, $0d, 1,1 
         .fill 16, 0
 
+
 ; FOCUS logo
         * = SPRITES_LOAD        ; $3c00-$3fff
 .binary "sprites-stretched.bin"
-
-
-
-
-
 
 
