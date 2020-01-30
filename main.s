@@ -12,7 +12,7 @@
 
         ; Set to 1 to add rasterbars behind the logos to debug sideborder
         ; opening code.
-        DEBUG_BORDER = 0
+        DEBUG_BORDER = 1
 
 
         ; use zp $20-$3x
@@ -380,7 +380,7 @@ logo2_bg lda #$09
         stx $d017
         stx $d01c
         lda #$c0
-        sta $d018
+        sta $d018 + 1,x
 
        ldx #(SPRITES_LOAD + $0200) / 64
 .for i = 0, i < 7, i += 1
@@ -422,7 +422,7 @@ logo2_lo        ldy #$05
         lda #$01
         sta $d020
         sta $d021
-        lda #$92 + 50
+        lda #$92 + 48
         jsr sprites_set_ypos
  
 
@@ -453,7 +453,7 @@ logo3_lo        ldy #$0e
         ;
         ; +                     74
 
-        lda #$d0
+        lda #$c0
         sta $d018
 
         cmp ($c1,x)
@@ -473,12 +473,11 @@ logo3_bg  lda #$00
 
 ;        jsr delay
 .dsection logo_3
-        ldx #$08 + 12
+        ldx #$04
 -       dex
         bne -
-        nop
-        nop
-        nop
+        bit $ea
+        bit $ea
         jsr open_border_1
         ; open one more line for some reason
         ; rts   = 6
@@ -676,10 +675,11 @@ open_border_1
         ldx #40
 -       lda colors,x    ; 4
         dec $d016       ; 6
+       sty $d016       ; 4
 .if DEBUG_BORDER
         sta $d021
 .endif
-        sty $d016       ; 4
+ 
         cmp ($c1,x)     ; 6
 .if DEBUG_BORDER
         nop
