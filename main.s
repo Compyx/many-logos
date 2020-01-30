@@ -422,18 +422,20 @@ logo2_lo        ldy #$05
         lda #$01
         sta $d020
         sta $d021
-        lda #$92 + 49
+        lda #$92 + 50
         jsr sprites_set_ypos
  
 
         ldx #01
 -       dex
         bne -
-logo3_bg lda #$06
+        lda #$00
         sta $d020
         sta $d021
-       ldx #3*9  ; logo index
+        ldx #3*9  ; logo index
         jsr sprites_set_xpos
+
+                lda #$06
 logo3_mid       lda #$03
 logo3_hi        ldx #$01
 logo3_lo        ldy #$0e
@@ -451,22 +453,44 @@ logo3_lo        ldy #$0e
         ;
         ; +                     74
 
-        lda #$c0
+        lda #$d0
         sta $d018
+
+        cmp ($c1,x)
         nop
         nop
-        ldx #15
+        lda #$01
+        sta $d020
+        sta $d021
+
+        nop
+        ldx #10
 -       dex
         bne -
-        bit $ea
+logo3_bg  lda #$00
+        sta $d020
+        sta $d021
 
 ;        jsr delay
 .dsection logo_3
-        jsr open_border_1
-        ldx #$0b
+        ldx #$08 + 12
 -       dex
         bne -
-        ;lda #0          ; 2
+        nop
+        nop
+        nop
+        jsr open_border_1
+        ; open one more line for some reason
+        ; rts   = 6
+        ; ldy # = 2
+        ; ldx # = 2
+        ; lda colors,x = 4
+        ;
+        ; DEC $d016
+
+        ldx #$03
+-       dex
+        bne -
         stx $d021       ; 4
         stx $d020       ; 4
 
@@ -478,9 +502,9 @@ logo3_lo        ldy #$0e
  ;       sta $d021
 
 ;.if SID_ENABLE
-        dec $d020
-        jsr SID_PLAY
-        dec $d020
+;        dec $d020
+;        jsr SID_PLAY
+;        dec $d020
         lda #0
         sta $d020
 ;.fi
