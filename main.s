@@ -128,7 +128,7 @@ irq0
         tsx
         cli
         .fill 11, $ea   ; reduce?
-.dsection irq01
+.dsection irq0a
 irq0a
         txs
         ldx #8
@@ -291,8 +291,10 @@ logo1_lo ldy #$0a
         lda #$ff
         sta $d01d
 
-        lda $d012
-        sta $8000
+        nop
+        nop
+        nop
+        nop
 
         lda logo1_ypos + 1      ; #$46
         clc
@@ -340,7 +342,7 @@ logo1_lo ldy #$0a
         ldx #2
 -       dex
         bne -
-        lda #01
+        lda #00
         sta $d020
         sta $d021
         ldx #$0b
@@ -490,14 +492,14 @@ logo3_bg  lda #$00
         lda #1
         sta $d021       ; 4
         sta $d020       ; 4
-;        ldx #$0c
-;-       dex
-;        bne -
-;        stx $d020
-;        stx $d021
+        ldx #$0c
+-       dex
+        bne -
+        stx $d020
+        stx $d021
 
-;        lda $d012
-;        sta $03ff
+        lda $d012
+        sta $03ff
 
 ;        jsr update_delay
 
@@ -505,10 +507,10 @@ logo3_bg  lda #$00
  ;       sta $d020
  ;       sta $d021
 
-        dec $d020
+        ;dec $d020
         jsr SID_PLAY
         lda #0
-        dec $d020
+        ;dec $d020
         lda #<irq1
         ldx #>irq1
         ldy #$f9
@@ -524,7 +526,7 @@ irq1
 
         lda #$03
         sta $d011
-        sta $d020
+        ;sta $d020
         lda #0
         sta $d017
         ldx #$30
@@ -534,25 +536,25 @@ irq1
         sta $d018
         lda #$0b
         sta $d011
-        dec $d020
+        ;dec $d020
         jsr sprites_setup
         jsr do_sinus_logo_0
         jsr do_sinus_logo_1
         jsr do_sinus_logo_2
         jsr do_sinus_logo_3
 
-         dec $d020
+         ;dec $d020
         ;jsr do_logo_1_wipe
 
        jsr scroller_rol
-       dec $d020
+       ;dec $d020
        jsr scroller_update
-        dec $d020
+        ;dec $d020
         jsr do_logo_0_wipe
-       inc $d020
-        inc $d020
-        inc $d020
-        inc $d020
+       ;inc $d020
+        ;inc $d020
+        ;inc $d020
+        ;inc $d020
 
         ldy #RASTER
         lda #<irq0
