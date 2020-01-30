@@ -15,14 +15,15 @@
         DEBUG_BORDER = 0
 
 
-        ; use zp $20-$3x
-
+        ; Uses zp $20-$3x
         SID_LOAD = $0ffc
         SID_PATH = "Pling_Plong_2.sid"
         SID_INIT = SID_LOAD
         SID_PLAY = SID_LOAD + 4
 
+        ; Focus logo
         SPRITES_LOAD = $3c00
+
         SCROLL_SPRITES_0 = $0040        ; $0040-$01bf -> 6 sprites
         SCROLL_SPRITES_1 = $3a00        ; $3a00-$3a7f -> 2 sprites
 
@@ -31,8 +32,8 @@
         ; second set of sprite pointers used for the logo's and scroll
         POINTERS1 = $37f8
 
+        ; ZP used by the intro
         ZP = $02
-
 
         ; starting raster line
         RASTER = $15
@@ -48,7 +49,7 @@
         ; offset to RASTER for the fourth logo's Y position
         LOGO_3_OFFSET = $b5
 
-
+        ; Number of logos
         NUM_LOGOS = 4
 
 
@@ -94,19 +95,12 @@ start
         sta $d011
         jsr swap_sid
         jsr scroll_sprites_clear
- 
+
         inc $d019
         ldx #0
         stx $3fff
         inx
         stx $d01a
-;        lda #$0c
-;        ldx #$0b
-;        sta $d020
-;        stx $d021
-
-;        lda #$47
-;        sta delay + 3
 
         jsr sprites_setup
 
@@ -153,9 +147,6 @@ irq0a
         cmp $d012
         beq +
 +
-;        lda #$0b
-;        sta $d020
-;        sta $d021
         lda #$c0
         sta $d018
         lda #$00
@@ -177,10 +168,11 @@ irq0a
         ;               ; ----
         ;               ; 59
 
-        ldx #$0a
+        ldx #$09
 -       dex
         bne -
-        lda #$1         ; 2
+        bit $ea
+        lda line_color         ; 4
         sta $d020       ; 4
         sta $d021       ; 4 == 10
 
@@ -204,12 +196,13 @@ logo0_bg
         sta $d020
         sta $d021
         nop
-;        lda #$14
+        nop
+
         lda #RASTER + $07
         jsr sprites_set_ypos
-        nop
         ldx #0  ; logo index
         jsr sprites_set_xpos
+
 logo0_mid lda #$0f
 logo0_hi  ldx #$01
 logo0_lo  ldy #$0c
@@ -217,12 +210,14 @@ logo0_lo  ldy #$0c
 
         lda #$ff
         sta $d017
+
 .dsection logo_0
         jsr open_border_1
-        ldx #$0b
+        ldx #$0a
 -       dex
         bne -
-        lda #1          ; 2
+        bit $ea
+        lda line_color         ; 4
         sta $d021       ; 4
         sta $d020       ; 4
         ldx #$0a
@@ -231,17 +226,16 @@ logo0_lo  ldy #$0c
         stx $d020
         stx $d021
 
-logo1_ypos
-        ;        lda #$46
         lda #RASTER + $39
         jsr sprites_set_ypos
         ldx #9
         jsr sprites_set_xpos
-        ldx #$07
+        ldx #$06
 -       dex
         bne -
+        bit $ea
 
-        lda #$01
+        lda line_color
         sta $d020
         sta $d021
         ldx #$08
@@ -249,7 +243,7 @@ logo1_ypos
         bpl -
         nop
         bit $ea
- 
+
 logo1_bg
         lda #$02
         sta $d020
@@ -288,11 +282,11 @@ logo1_lo ldy #$0a
 
 .dsection logo_1
         jsr open_border_1
-        ldx #$0a
+        ldx #$09
 -       dex
         bne -
-        bit $ea
-        lda #1
+        cmp ($c1,x)
+        lda line_color
         sta $d020
         sta $d021
         ldx #$0c
@@ -300,22 +294,16 @@ logo1_lo ldy #$0a
         bne -
         stx $d020
         stx $d021
-
-        lda #$00
-        sta $d017
-        sta $d01c
-        lda #$ff
-        sta $d01d
+        stx $d017
+        stx $d01c
+        dex
+        stx $d01d
 
         nop
         nop
         nop
         nop
-
-;        lda logo1_ypos + 1      ; #$46
-;        clc
-;        adc #$31
-
+        nop
         nop
         nop
         nop
@@ -360,17 +348,22 @@ logo1_lo ldy #$0a
         ; ----------------- +
         ;               61
 
-        ldx #2
+;        ldx #2
+;-       dex
+;        bne -
+;        lda #00        ;2
+;        sta $d020      ;4
+;        sta $d021      ;4
+;        ldx #$0b       ;2
+;-       dex
+;        bne -
+;        stx $d020      ;4
+;        stx $d021      ;4 += 20
+
+        ldx #$11
 -       dex
         bne -
-        lda #00
-        sta $d020
-        sta $d021
-        ldx #$0b
--       dex
-        bne -
-        stx $d020
-        stx $d021
+
 
 .dsection rol_scroll
         ldx #3
@@ -380,8 +373,7 @@ logo1_lo ldy #$0a
         jsr open_border_2
         nop
         nop
-        nop
-        lda #1
+        lda line_color
         sta $d020
         sta $d021
 
@@ -436,16 +428,15 @@ logo2_lo        ldy #$05
 
 .dsection logo_2
         jsr open_border_1
-        ldx #$0a
+        ldx #$09
 -       dex
         bne -
-        lda #$01
+        bit $ea
+        lda line_color
         sta $d020
         sta $d021
-;        lda #$92 + 48
         lda #RASTER + $b5
         jsr sprites_set_ypos
- 
 
         ldx #01
 -       dex
@@ -479,8 +470,7 @@ logo3_lo        ldy #$0e
 
         cmp ($c1,x)
         nop
-        nop
-        lda #$01
+        lda line_color
         sta $d020
         sta $d021
 
@@ -508,10 +498,11 @@ logo3_bg  lda #$00
         ;
         ; DEC $d016
 
-        ldx #$0a
+        ldx #$09
 -       dex
         bne -
-        lda #1
+        bit $ea
+        lda line_color
         sta $d021       ; 4
         sta $d020       ; 4
         ldx #$0c
@@ -727,6 +718,8 @@ wipe_index      .byte 0
                 .byte (wipes_2 - wipes) / 2
                 .byte (wipes_3 - wipes) / 2
 
+; color of the raster lines surrounding the logos
+line_color      .byte 7
 
 do_sinus_logo_0
         lda #0
@@ -794,20 +787,23 @@ loop
         asl
         asl
         tay
-
-        ldx #0
 -
         lda color_ptrs + 0,y
-        sta code_ptrs + 0,x
+        sta code_ptrs + 0
         lda color_ptrs + 1,y
-        sta code_ptrs + 1,x
-
-        iny
-        iny
-        inx
-        inx
-        cpx #8
-        bne -
+        sta code_ptrs + 1
+        lda color_ptrs + 2,y
+        sta code_ptrs + 2
+        lda color_ptrs + 3,y
+        sta code_ptrs + 3
+        lda color_ptrs + 4,y
+        sta code_ptrs + 4
+        lda color_ptrs + 5,y
+        sta code_ptrs + 5
+        lda color_ptrs + 6,y
+        sta code_ptrs + 6
+        lda color_ptrs + 7,y
+        sta code_ptrs + 7
 
         ldx logo_index
         lda wipe_index,x
