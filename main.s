@@ -192,7 +192,7 @@ irq0a
 
        ; jsr delay       ; $56
 logo0_bg
-        lda #$0b
+        lda #$00
         sta $d020
         sta $d021
         nop
@@ -203,9 +203,9 @@ logo0_bg
         ldx #0  ; logo index
         jsr sprites_set_xpos
 
-logo0_mid lda #$0f
-logo0_hi  ldx #$01
-logo0_lo  ldy #$0c
+logo0_mid lda #$00
+logo0_hi  ldx #$00
+logo0_lo  ldy #$00
         jsr sprites_set_colors
 
         lda #$ff
@@ -245,15 +245,15 @@ logo0_lo  ldy #$0c
         bit $ea
 
 logo1_bg
-        lda #$02
+        lda #$00
         sta $d020
         sta $d021
         nop
         bit $ea
 
-logo1_mid lda #$07
-logo1_hi ldx #$01
-logo1_lo ldy #$0a
+logo1_mid lda #$00
+logo1_hi ldx #$00
+logo1_lo ldy #$00
         jsr sprites_set_colors
 
 ;        lda #$33        ; 2
@@ -382,7 +382,7 @@ logo1_lo ldy #$0a
         bne -
         stx $d020
         stx $d021
-logo2_bg lda #$09
+logo2_bg lda #$00
         sta $d020
         sta $d021
  
@@ -406,9 +406,9 @@ logo2_bg lda #$09
         jsr sprites_set_ypos
         ldx #9*2  ; logo index
         jsr sprites_set_xpos
-logo2_mid       lda #$03
-logo2_hi        ldx #$01
-logo2_lo        ldy #$05
+logo2_mid       lda #$00
+logo2_hi        ldx #$00
+logo2_lo        ldy #$00
         jsr sprites_set_colors
 
         ; JSR =                          6
@@ -447,10 +447,10 @@ logo2_lo        ldy #$05
         ldx #3*9  ; logo index
         jsr sprites_set_xpos
 
-                lda #$06
-logo3_mid       lda #$03
-logo3_hi        ldx #$01
-logo3_lo        ldy #$0e
+        nop
+logo3_mid       lda #$00
+logo3_hi        ldx #$00
+logo3_lo        ldy #$00
         jsr sprites_set_colors
 
         lda #$ff
@@ -473,7 +473,8 @@ logo3_lo        ldy #$0e
         lda line_color
         sta $d020
         sta $d021
-
+nop
+nop
         nop
         ldx #10
 -       dex
@@ -535,7 +536,7 @@ irq1
 
         lda #$03
         sta $d011
-        sta $d020
+;        sta $d020
         lda #0
         sta $d017
         ldx #$30
@@ -545,20 +546,22 @@ irq1
         sta $d018
         lda #$0b
         sta $d011
-        inc $d020
+        ;inc $d020
         jsr SID_PLAY
-        inc $d020
+        ;inc $d020
+        jsr line_color_update
+        ;inc $d020
         jsr sprites_setup
         jsr do_sinus_logo_0
         jsr do_sinus_logo_1
         jsr do_sinus_logo_2
         jsr do_sinus_logo_3
 
-        inc $d020
+        ;inc $d020
         jsr scroller_rol
-        inc $d020
+        ;inc $d020
         jsr scroller_update
-        inc $d020
+        ;inc $d020
         jsr do_logo_0_wipe
         lda #0
         sta $d020
@@ -640,19 +643,36 @@ set_scroll_xpos .proc
         rts
 .pend
 
+        ; move to zp (probably not possible anymore)
+spr_xpos_table  .fill NUM_LOGOS * $09, 0
+
+spr_xpos_add    .byte $00, $18, $30, $48, $60, $78, $90, $a8, $c0
+
+spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80, $00
+
+wipe_index      .byte 0
+                .byte (wipes_1 - wipes) / 2
+                .byte (wipes_2 - wipes) / 2
+                .byte (wipes_3 - wipes) / 2
+
+; color of the raster lines surrounding the logos
+line_color      .byte 0
 
 
+
+; Make sure the code/data doesn't overlap the sprite pointers at $37f8+
 .cerror * > POINTERS0, "Overlapping sprite pointers"
 
-        * = $3400
 
+
+        * = $3400
 
 open_border_1
         ldy #8
         ldx #40
 -       lda colors,x    ; 4
         dec $d016       ; 6
-       sty $d016       ; 4
+        sty $d016       ; 4
 .if DEBUG_BORDER
         sta $d021
         nop
@@ -671,7 +691,6 @@ open_border_1
         bpl -           ; 3 when brach, 2 when not
                         ;+ ----
                         ; 18 + 20 + 5 + 2 = 
-
         rts
 
 open_border_2
@@ -699,27 +718,11 @@ open_border_2
 
 sinus
         .byte SIN_WIDTH / 2 + (SIN_WIDTH / 2.0 - 0.5) * sin(range(128) * rad(360.0/128))
-
 color_ptrs
         .word logo0_bg + 1, logo0_lo + 1, logo0_mid + 1, logo0_hi + 1
         .word logo1_bg + 1, logo1_lo + 1, logo1_mid + 1, logo1_hi + 1
         .word logo2_bg + 1, logo2_lo + 1, logo2_mid + 1, logo2_hi + 1
         .word logo3_bg + 1, logo3_lo + 1, logo3_mid + 1, logo3_hi + 1
-
-        ; move to zp (probably not possible anymore)
-spr_xpos_table  .fill NUM_LOGOS * $09, 0
-
-spr_xpos_add    .byte $00, $18, $30, $48, $60, $78, $90, $a8, $c0
-
-spr_xpos_msbbit .byte $01, $02, $04, $08, $10, $20, $40, $80, $00
-
-wipe_index      .byte 0
-                .byte (wipes_1 - wipes) / 2
-                .byte (wipes_2 - wipes) / 2
-                .byte (wipes_3 - wipes) / 2
-
-; color of the raster lines surrounding the logos
-line_color      .byte 7
 
 do_sinus_logo_0
         lda #0
@@ -771,7 +774,7 @@ do_logo_0_wipe .proc
         code_ptrs = ZP + 1 ; 2 bytes
         col_index = ZP + 4
 
-delay   lda #3
+delay   lda #$ff
         beq +
         dec delay + 1
         rts
@@ -851,7 +854,25 @@ next
 .pend
 
 
+line_color_update .proc
+delay   lda #$80
+        beq +
+        dec delay +1 
+        rts
++
+        lda #$02
+        sta delay + 1
+index   ldx #0
+        lda line_fadein,x
+        bmi +
+        sta line_color
+        inc index + 1
++       rts
+.pend
 
+line_fadein
+        .byte 0, 6, 0, 6, 4, 6, 0, 6, 4, 14, 4, 6, 0, 6, 4, 14, 15, 14, 4, 6
+        .byte 0 ,6, 4, 14, 15, 7, 15, 14, 4, 6, 0, 6, 4, 14, 15, 7, 1, $ff
 
 
 ; Set sprite YPOS quickly
@@ -921,9 +942,6 @@ calc_sprites_xpos .proc
         lda xmsb
         ora #1
         sta spr_xpos_table + 8 - 8,x
-
-
-
         rts
 .pend
 
@@ -988,7 +1006,7 @@ xpos    ldx #7
 index   ldy #0
         lda scroll_text,y
         bpl +
-        ldy #0
+        ldy #scroll_repeat - scroll_text
         sty index + 1
         lda scroll_text,y
 +
@@ -996,8 +1014,14 @@ index   ldy #0
         asl
         asl
         sta font + 1
-        lda #$d0
-        adc #0
+        lda scroll_text,y
+        lsr
+        lsr
+        lsr
+        lsr
+        lsr
+        clc
+        adc #$d8
         sta font + 2
         lda #$33
         sta $01
@@ -1042,60 +1066,7 @@ scroll_sprites_clear .proc
         rts
 .pend
 
-
-
-
-.dsection scroll_text
-scroll_text
-        .enc "screen"
-        .text "abcdefghiklmnopqrstxz !@#$%&*() hello world! ... focus rules!"
-        .byte $ff
-
-.cerror * > POINTERS1, "Overlapping sprite pointers!"
-
-
-; SID at temp place
-;               * = SID_LOAD
-
-        * = $3800
-        SID_TEMP = *
-
-.binary  format("%s", SID_PATH), $7e
-
-       SID_TEMP_END = *
-
-
-; Swap SID from between its temporary location and its proper location
-;
-; Called when starting this intro and called when exiting to adhere to the
-; Intro Creation Compo 2019, 4KB category.
-;
-swap_sid .proc
-        ldx #0
--
-        ldy SID_TEMP,x
-        lda SID_LOAD,x
-        sta SID_TEMP,x
-        tya
-        sta SID_LOAD,x
-        inx
-        bne -
--
-        ldy SID_TEMP + 256,x
-        lda SID_LOAD + 256,x
-        sta SID_TEMP + 256,x
-        tya
-        sta SID_LOAD + 256,x
-
-        ; don't copy too much, otherwise this routine moves itself, leading to
-        ; some interesting bugs.
-        inx
-        cpx #(SID_TEMP_END - SID_TEMP) & $0ff
-        bne -
-        rts
-.pend
-
-       * = $3b00
+.dsection wipes_start
 wipes
         .byte $00, $00
         ; grey
@@ -1184,6 +1155,58 @@ wipes_3
         .byte $00, $06
         .byte $00, $00
 wipes_end
+.dsection wipes_end
+
+
+
+
+
+.cerror * > POINTERS1, "Overlapping sprite pointers!"
+
+
+; SID at temp place
+;               * = SID_LOAD
+
+        * = $3800
+        SID_TEMP = *
+
+.binary  format("%s", SID_PATH), $7e
+
+       SID_TEMP_END = *
+
+
+; Swap SID from between its temporary location and its proper location
+;
+; Called when starting this intro and called when exiting to adhere to the
+; Intro Creation Compo 2019, 4KB category.
+;
+swap_sid .proc
+        ldx #0
+-
+        ldy SID_TEMP,x
+        lda SID_LOAD,x
+        sta SID_TEMP,x
+        tya
+        sta SID_LOAD,x
+        inx
+        bne -
+-
+        ldy SID_TEMP + 256,x
+        lda SID_LOAD + 256,x
+        sta SID_TEMP + 256,x
+        tya
+        sta SID_LOAD + 256,x
+
+        ; don't copy too much, otherwise this routine moves itself, leading to
+        ; some interesting bugs.
+        inx
+        cpx #(SID_TEMP_END - SID_TEMP) & $0ff
+        bne -
+        rts
+.pend
+
+        * = $3a80
+
 
 
 colors
@@ -1197,8 +1220,22 @@ colors
 
 
 scroll_colors
-        .byte 0, 0, 6, $06, $04, $0e, $0f, $07, $0d, 1,1 
-        .fill 16, 0
+        .byte 0, 0, 6, $06, $04, $0e, $0f, $07, $0d, 1, $01, $07, $0f
+        .fill 12, 0
+
+        * = $3b00
+.dsection scroll_text
+scroll_text
+        .enc "screen"
+        .text "     Rasters!         FOCUS!!!"
+scroll_repeat
+        .fill 20, $20
+        .text "This is my second and way too late 4KB entry for the 'ICC2019' "
+        .text "compo.  Logo and code by the Amazing Compyx, "
+        .text "Short but sweet tune by GRG.  Might as well press 'Space' "
+        .text "I suppose :)   PROOST!       "
+        .byte $ff
+.dsection scroll_text_end
 
 
 ; FOCUS logo
