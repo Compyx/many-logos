@@ -512,9 +512,6 @@ logo3_bg  lda #$00
         stx $d020
         stx $d021
 
-        lda $d012
-        sta $03ff
-
 ;        jsr update_delay
 
 ;        lda #0
